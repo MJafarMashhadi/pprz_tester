@@ -2,18 +2,17 @@ import sys
 import logging
 sys.path.append("../pprzlink/lib/v1.0/python")
 
-from ivy.std_api import *
-import pprzlink.ivy
 import pprzlink.message as message
 
 
-logger = logging.Logger(__name__, level=logging.DEBUG)
+logger = logging.getLogger('pprz_tester')
 
 class IvySubscribe:
     def __init__(self,  ivy_link, message_types, allow_direct_calls=True):
         self.ivy_link = ivy_link
         self.message_types = message_types
         self.allow_direct_calls = allow_direct_calls
+        self.bound = False
 
     def __call__(self, f):
         for message_class, message_name in self.message_types:
@@ -22,12 +21,16 @@ class IvySubscribe:
                 msg=message_name
             )
             self.ivy_link.subscribe(f, msg_type_obj)
-            logger.info(f"subscribed to {message_class}.{message_name}")
+            logger.info(f"Function {f.__module__}.{f.__name__} is listening to {message_class}.{message_name}")
+            self.bound = True
         
-        if self.allow_direct_calls:
-            return f
-        else:
-            def dummy(*__, **_): 
-                raise RuntimeError("Direct calls to this method are not allowed")
+        def dummy(*__, **_): 
+            # Moved the if inside the function so it can be restored later if unsubbed
+            if self.allow_direct_calls or not self.bound:
+                return f(*__, **_)
+            else:
+                raise RuntimeError(f"Calls to {f.__module__}.{f.__name__} are not allowed")
 
-            return dummy
+        return dummy
+    
+    # TODO: a pythonic way to unsub
