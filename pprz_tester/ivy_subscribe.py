@@ -35,20 +35,16 @@ class IvySubscribe:
 
     def __call__(self, f):
         self.function_name = f'{f.__module__}.{f.__name__}'
+        callback = self._wrap_callback(f)
+        direct_call = self._wrap_direct_call(f)
+
         if self.message_types is None:
-            self._subscribe_to_all(f)
+            self._subscribe_to_all(callback)
         else:
-            self._subscribe(f)
-        self.bound = True
+            self._subscribe(callback)
 
-        def dummy(*__, **_):
-            # Moved the if inside the function so it can be restored later if unsubbed
-            if self.allow_direct_calls or not self.bound:
-                return f(*__, **_)
-            else:
-                raise RuntimeError(f"Calls to {f.__module__}.{f.__name__} are not allowed")
-
-        return dummy
+        direct_call.__ivy_subs__ = self
+        return direct_call
 
     def _subscribe(self, f):
         for subscription_pattern in self.message_types:
@@ -81,3 +77,16 @@ class IvySubscribe:
             except:
                 logger.warning(f'Ignored error during unsubscribing {self.function_name} from #{subscription_id}')
 
+    def _wrap_callback(self, f):
+        return f
+
+    def _wrap_direct_call(self, f):
+        def wrapped(*args, **kwargs):
+            # Moved the if inside the function so it can be restored later if unsubbed
+            if len(self.subscription_ids) > 0:
+                return f(*args, **kwargs)
+            else:
+                raise RuntimeError(
+                    f"Direct calls to {self.function_name} while it is listening to messages are not allowed")
+
+        return wrapped
