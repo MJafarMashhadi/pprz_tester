@@ -96,5 +96,28 @@ class DisallowDirectCallsMixin:
         return wrapped
 
 
+
+class OneTimeSubsMixin:
+    def _wrap_callback(self: IvySubscribe, f):
+        f = super(OneTimeSubsMixin, self)._wrap_callblack(IvySubscribe, f)
+
+        def _call_and_unsub(*args, **kwargs):
+            try:
+                result = f(*args, **kwargs)
+            except Exception as e:
+                raise e
+            else:
+                return result
+            finally:
+                self.unsubscribe(self.subscription_ids)
+
+        return _call_and_unsub
+
+
+
+class IvyOneTimeSubscribe(IvySubscribe, OneTimeSubsMixin):
+    pass
+
+
 class IvyNoDirectCallsSubscribe(IvySubscribe, DisallowDirectCallsMixin):
     pass
