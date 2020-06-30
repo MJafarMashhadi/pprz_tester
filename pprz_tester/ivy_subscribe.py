@@ -25,12 +25,13 @@ class IvySubscribe:
         self.ivy_link = ivy_link
         self.message_types = message_types
         self.allow_direct_calls = allow_direct_calls
-        self.bound = False
+        self.subscription_ids = []
         self.function_name = ''
 
     def _subscribe_to_all(self, f):
-        self.ivy_link.subscribe(f)
+        subscription_id = self.ivy_link.subscribe(f)
         logger.info(f"Function {self.function_name} is listening to all messages")
+        self.subscription_ids.append(subscription_id)
 
     def __call__(self, f):
         self.function_name = f'{f.__module__}.{f.__name__}'
@@ -57,12 +58,26 @@ class IvySubscribe:
                     class_name=message_class,
                     msg=message_name
                 )
-                self.ivy_link.subscribe(f, regex_or_msg=msg_type_obj)
+                subscription_id = self.ivy_link.subscribe(f, regex_or_msg=msg_type_obj)
                 logger.info(f"Function {self.function_name} is listening to {message_class}.{message_name}")
             elif isinstance(subscription_pattern, str):
-                self.ivy_link.subscribe(f, regex_or_msg=subscription_pattern)
+                subscription_id = self.ivy_link.subscribe(f, regex_or_msg=subscription_pattern)
                 logger.info(f"Function {self.function_name} is listening to messages matching {subscription_pattern}")
             else:
                 raise ValueError(f'Invalid subscription pattern {subscription_pattern}')
 
-    # TODO: a pythonic way to unsub
+            self.subscription_ids.append(subscription_id)
+
+    def unsubscribe(self, ids=None):
+        if ids is None:
+            ids = self.subscription_ids
+
+        if isinstance(ids, int):
+            ids = [ids]
+
+        for subscription_id in ids:
+            try:
+                self.ivy_link.unsubscribe(subscription_id)
+            except:
+                logger.warning(f'Ignored error during unsubscribing {self.function_name} from #{subscription_id}')
+
