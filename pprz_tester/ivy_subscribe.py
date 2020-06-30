@@ -32,8 +32,8 @@ class IvySubscribe:
 
     def __call__(self, f):
         self.function_name = f'{f.__module__}.{f.__name__}'
-        callback = self._wrap_callback(f)
-        direct_call = self._wrap_direct_call(f)
+        callback = self.wrap_callback(f)
+        direct_call = self.wrap_direct_call(f)
 
         if self.message_types is None:
             self._subscribe_to_all(callback)
@@ -74,18 +74,18 @@ class IvySubscribe:
             except:
                 logger.warning(f'Ignored error during unsubscribing {self.function_name} from #{subscription_id}')
 
-    def _wrap_callback(self, f):
+    def wrap_callback(self, f):
         return f
 
-    def _wrap_direct_call(self, f):
+    def wrap_direct_call(self, f):
         return f
 
 
 class DisallowDirectCallsMixin:
-    def _wrap_direct_call(self: IvySubscribe, f):
-        f = super(DisallowDirectCallsMixin, self)._wrap_direct_call(IvySubscribe, f)
+    def wrap_direct_call(self: IvySubscribe, f):
+        f = super(DisallowDirectCallsMixin, self).wrap_direct_call(IvySubscribe, f)
 
-        def wrapped(*args, **kwargs):
+        def _wrapped(*args, **kwargs):
             # Moved the if inside the function so it can be restored later if unsubbed
             if len(self.subscription_ids) > 0:
                 return f(*args, **kwargs)
@@ -93,13 +93,12 @@ class DisallowDirectCallsMixin:
                 raise RuntimeError(
                     f"Direct calls to {self.function_name} while it is listening to messages are not allowed")
 
-        return wrapped
-
+        return _wrapped
 
 
 class OneTimeSubsMixin:
-    def _wrap_callback(self: IvySubscribe, f):
-        f = super(OneTimeSubsMixin, self)._wrap_callblack(IvySubscribe, f)
+    def wrap_callback(self: IvySubscribe, f):
+        f = super(OneTimeSubsMixin, self).wrap_callblack(IvySubscribe, f)
 
         def _call_and_unsub(*args, **kwargs):
             try:
@@ -114,10 +113,16 @@ class OneTimeSubsMixin:
         return _call_and_unsub
 
 
-
-class IvyOneTimeSubscribe(IvySubscribe, OneTimeSubsMixin):
+class IvySubscribeOnce(IvySubscribe, OneTimeSubsMixin):
+    """
+    All subscriptions expire as soon as one matching message is processed
+    """
     pass
 
 
 class IvyNoDirectCallsSubscribe(IvySubscribe, DisallowDirectCallsMixin):
+    """
+    While the wrapped function is listening to some messages it cannot be called by anyone other than the ivy interface.
+
+    """
     pass
