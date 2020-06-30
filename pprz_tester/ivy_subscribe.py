@@ -69,8 +69,12 @@ class IvySubscribe:
             ids = [ids]
 
         for subscription_id in ids:
+            if subscription_id not in self.subscription_ids:
+                logger.warning(f'Function {self.function_name} had no subscription {subscription_id}')
+                continue
             try:
                 self.ivy_link.unsubscribe(subscription_id)
+                self.subscription_ids.remove(subscription_id)
             except:
                 logger.warning(f'Ignored error during unsubscribing {self.function_name} from #{subscription_id}')
 
