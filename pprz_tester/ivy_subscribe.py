@@ -12,19 +12,16 @@ logger = logging.getLogger('pprz_tester')
 class IvySubscribe:
     def __init__(self,
                  ivy_link: IvyMessagesInterface,
-                 message_types: Optional[List[Union[Tuple[str], str]]] = None,
-                 allow_direct_calls: bool = True
+                 message_types: Optional[List[Union[Tuple[str], str]]] = None
                  ):
         """
         Decorator to assign a method for listening to incoming ivy messages.
 
         :param: ivy_link
         :param: message_types
-        :param: allow_direct_calls
         """
         self.ivy_link = ivy_link
         self.message_types = message_types
-        self.allow_direct_calls = allow_direct_calls
         self.subscription_ids = []
         self.function_name = ''
 
@@ -81,6 +78,13 @@ class IvySubscribe:
         return f
 
     def _wrap_direct_call(self, f):
+        return f
+
+
+class DisallowDirectCallsMixin:
+    def _wrap_direct_call(self: IvySubscribe, f):
+        f = super(DisallowDirectCallsMixin, self)._wrap_direct_call(IvySubscribe, f)
+
         def wrapped(*args, **kwargs):
             # Moved the if inside the function so it can be restored later if unsubbed
             if len(self.subscription_ids) > 0:
@@ -90,3 +94,7 @@ class IvySubscribe:
                     f"Direct calls to {self.function_name} while it is listening to messages are not allowed")
 
         return wrapped
+
+
+class IvyNoDirectCallsSubscribe(IvySubscribe, DisallowDirectCallsMixin):
+    pass
