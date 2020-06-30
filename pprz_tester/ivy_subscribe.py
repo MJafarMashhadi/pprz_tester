@@ -87,7 +87,7 @@ class IvySubscribe:
 
 class DisallowDirectCallsMixin:
     def wrap_direct_call(self: IvySubscribe, f):
-        f = super(DisallowDirectCallsMixin, self).wrap_direct_call(IvySubscribe, f)
+        f = super(DisallowDirectCallsMixin, self).wrap_direct_call(f)
 
         def _wrapped(*args, **kwargs):
             # Moved the if inside the function so it can be restored later if unsubbed
@@ -102,7 +102,7 @@ class DisallowDirectCallsMixin:
 
 class OneTimeSubsMixin:
     def wrap_callback(self: IvySubscribe, f):
-        f = super(OneTimeSubsMixin, self).wrap_callblack(IvySubscribe, f)
+        f = super(OneTimeSubsMixin, self).wrap_callback(f)
 
         def _call_and_unsub(*args, **kwargs):
             try:
@@ -117,14 +117,14 @@ class OneTimeSubsMixin:
         return _call_and_unsub
 
 
-class IvySubscribeOnce(IvySubscribe, OneTimeSubsMixin):
+class IvySubscribeOnce(OneTimeSubsMixin, IvySubscribe):
     """
     All subscriptions expire as soon as one matching message is processed
     """
     pass
 
 
-class IvyNoDirectCallsSubscribe(IvySubscribe, DisallowDirectCallsMixin):
+class IvyNoDirectCallsSubscribe(DisallowDirectCallsMixin, IvySubscribe):
     """
     While the wrapped function is listening to some messages it cannot be called by anyone other than the ivy interface.
 
