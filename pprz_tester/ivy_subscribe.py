@@ -26,12 +26,14 @@ class IvySubscribe:
         self.message_types = message_types
         self.allow_direct_calls = allow_direct_calls
         self.bound = False
+        self.function_name = ''
 
     def _subscribe_to_all(self, f):
         self.ivy_link.subscribe(f)
-        logger.info(f"Function {f.__module__}.{f.__name__} is listening to all messages")
+        logger.info(f"Function {self.function_name} is listening to all messages")
 
     def __call__(self, f):
+        self.function_name = f'{f.__module__}.{f.__name__}'
         if self.message_types is None:
             self._subscribe_to_all(f)
         else:
@@ -56,10 +58,10 @@ class IvySubscribe:
                     msg=message_name
                 )
                 self.ivy_link.subscribe(f, regex_or_msg=msg_type_obj)
-                logger.info(f"Function {f.__module__}.{f.__name__} is listening to {message_class}.{message_name}")
+                logger.info(f"Function {self.function_name} is listening to {message_class}.{message_name}")
             elif isinstance(subscription_pattern, str):
                 self.ivy_link.subscribe(f, regex_or_msg=subscription_pattern)
-                logger.info(f"Function {f.__module__}.{f.__name__} is listening to messages matching {subscription_pattern}")
+                logger.info(f"Function {self.function_name} is listening to messages matching {subscription_pattern}")
             else:
                 raise ValueError(f'Invalid subscription pattern {subscription_pattern}')
 
