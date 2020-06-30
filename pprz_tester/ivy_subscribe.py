@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Union
 
 sys.path.append("../pprzlink/lib/v1.0/python")
 import pprzlink.message as message
@@ -12,7 +12,7 @@ logger = logging.getLogger('pprz_tester')
 class IvySubscribe:
     def __init__(self,
                  ivy_link: IvyMessagesInterface,
-                 message_types: Optional[List[Tuple[str]]]=None,
+                 message_types: Optional[List[Union[Tuple[str], str]]] = None,
                  allow_direct_calls: bool = True
                  ):
         """
@@ -48,12 +48,19 @@ class IvySubscribe:
         return dummy
 
     def _subscribe(self, f):
-        for message_class, message_name in self.message_types:
-            msg_type_obj = message.PprzMessage(
-                class_name=message_class,
-                msg=message_name
-            )
-            self.ivy_link.subscribe(f, msg_type_obj)
-            logger.info(f"Function {f.__module__}.{f.__name__} is listening to {message_class}.{message_name}")
+        for subscription_pattern in self.message_types:
+            if isinstance(subscription_pattern, tuple):
+                message_class, message_name = subscription_pattern
+                msg_type_obj = message.PprzMessage(
+                    class_name=message_class,
+                    msg=message_name
+                )
+                self.ivy_link.subscribe(f, regex_or_msg=msg_type_obj)
+                logger.info(f"Function {f.__module__}.{f.__name__} is listening to {message_class}.{message_name}")
+            elif isinstance(subscription_pattern, str):
+                self.ivy_link.subscribe(f, regex_or_msg=subscription_pattern)
+                logger.info(f"Function {f.__module__}.{f.__name__} is listening to messages matching {subscription_pattern}")
+            else:
+                raise ValueError(f'Invalid subscription pattern {subscription_pattern}')
 
     # TODO: a pythonic way to unsub
