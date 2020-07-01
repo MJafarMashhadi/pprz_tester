@@ -26,6 +26,12 @@ class Aircraft(object):
         if auto_request_config:
             self.request_config()
 
+        self._ac = AircraftCommands(self)
+
+    @property
+    def commands(self):
+        return self._ac
+
     def request_config(self):
         new_id = RequestUIDFactory.generate_uid()
 
@@ -50,13 +56,6 @@ class Aircraft(object):
         self._ivy.send(data_request_message)
         logger.info("Requested new aircraft config")
 
-    def jump_to_block(self, block_id):
-        m = pl.message.PprzMessage("ground", "JUMP_TO_BLOCK")
-        m.set_value_by_name('ac_id', self.id)
-        m.set_value_by_name('block_id', block_id)
-
-        return  self._ivy.send(m, ac_id=self.id)
-
     def update_mode(self, msg):
         new_mode = int(msg['ap_mode'])
         if new_mode == self.mode:
@@ -64,7 +63,24 @@ class Aircraft(object):
             return False
         self.mode = new_mode
         if self.mode == 2:  # AUTO1 or AUTO2
-            print("Mode = AUTO2, ready")
+            print(f'{self.id} Mode = AUTO2, ready')
 
         return True
 
+
+class AircraftCommands(object):
+    def __init__(self, ac: Aircraft):
+        self.ac = ac
+
+    def __getattr__(self, item):
+        if hasattr(self.ac, item):
+            return getattr(self.ac, item)
+        else:
+            raise AttributeError('No such command \'%s\' available for this aircraft.' % item)
+
+    def jump_to_block(self, block_id):
+        m = pl.message.PprzMessage("ground", "JUMP_TO_BLOCK")
+        m.set_value_by_name('ac_id', self.id)
+        m.set_value_by_name('block_id', block_id)
+
+        return self._ivy.send(m, ac_id=self.id)
