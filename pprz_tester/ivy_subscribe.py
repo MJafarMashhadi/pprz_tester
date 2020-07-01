@@ -1,8 +1,6 @@
 import logging
-import sys
 from typing import List, Tuple, Optional, Union
 
-sys.path.append("../pprzlink/lib/v1.0/python")
 import pprzlink.message as message
 from pprzlink.ivy import IvyMessagesInterface
 

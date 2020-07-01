@@ -3,8 +3,7 @@ import logging
 from lxml import etree
 
 import pprzlink as pl
-from util import RequestUIDFactory
-from ivy_subscribe import IvySubscribeOnce
+from ivy_request_messages import request_data
 
 logger = logging.getLogger('pprz_tester')
 
@@ -33,9 +32,6 @@ class Aircraft(object):
         return self._ac
 
     def request_config(self):
-        new_id = RequestUIDFactory.generate_uid()
-
-        @IvySubscribeOnce(ivy_link=self._ivy, message_types=[r"^((\S*\s*)?%s ground CONFIG( .*|$))" % new_id])
         def aircraft_config_callback(ac_id, msg):
             assert int(ac_id) == self.id
 
@@ -47,14 +43,14 @@ class Aircraft(object):
             for block in fp_tree.xpath("//block"):
                 self.flight_plan_blocks[block.attrib['name']] = int(block.attrib['no'])
 
-        # Manually sending request message since it is not yet implemented in pprz_link.
-        config_request_message = pl.message.PprzMessage("ground", "CONFIG_REQ")
-        config_request_message.set_value_by_name('ac_id', self.id)
-        data_request_message = ' '.join((
-            self._ivy_agent_name, new_id, config_request_message.name, config_request_message.payload_to_ivy_string()
-        ))
-        self._ivy.send(data_request_message)
-        logger.info("Requested new aircraft config")
+        request_data(
+            self._ivy,
+            self._ivy_agent_name,
+            "ground",
+            "CONFIG",
+            aircraft_config_callback,
+            ac_id=self.id
+        )
 
     def update_mode(self, msg):
         new_mode = int(msg['ap_mode'])
