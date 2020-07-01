@@ -40,6 +40,7 @@ class Aircraft(object):
         self.id = ac_id
         self.flight_plan_uri = None
         self.mode = None
+        self.flight_plan_blocks = dict()
 
         if auto_request_config:
             self.request_config()
@@ -54,9 +55,10 @@ class Aircraft(object):
             logger.info(f"Got new aircraft config {ac_id}: {msg}")
             flight_plan_uri = msg['flight_plan']
 
+            logger.info(f"Loading flight plan {ac_id}: {flight_plan_uri}")
             fp_tree = etree.parse(flight_plan_uri)
             for block in fp_tree.xpath("//block"):
-                print(f'block {block.attrib["name"]} ({block.attrib["no"]})')
+                self.flight_plan_blocks[block.attrib['name']] = int(block.attrib['no'])
 
         # Manually sending request message since it is not yet implemented in pprz_link.
         config_request_message = pl.message.PprzMessage("ground", "CONFIG_REQ")
