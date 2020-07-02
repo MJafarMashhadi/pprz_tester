@@ -83,3 +83,8 @@ class AircraftCommands(object):
         m.set_value_by_name('block_id', block_id)
 
         return self._send(m)
+
+    def takeoff(self):
+        # Must ensure takeoff mode is activated before launching
+        assert 'Takeoff' in self.flight_plan_blocks, 'No takeoff block found, check if the plan is down linked'
+        return self.jump_to_block(self.flight_plan_blocks['Takeoff'])
