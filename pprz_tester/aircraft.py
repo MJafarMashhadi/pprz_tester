@@ -74,9 +74,12 @@ class AircraftCommands(object):
         else:
             raise AttributeError('No such command \'%s\' available for this aircraft.' % item)
 
+    def _send(self, message):
+        return self._ivy.send(message, ac_id=self.id)
+
     def jump_to_block(self, block_id):
         m = pl.message.PprzMessage("ground", "JUMP_TO_BLOCK")
         m.set_value_by_name('ac_id', self.id)
         m.set_value_by_name('block_id', block_id)
 
-        return self._ivy.send(m, ac_id=self.id)
+        return self._send(m)
