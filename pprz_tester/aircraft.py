@@ -77,7 +77,17 @@ class AircraftCommands(object):
     def _send(self, message):
         return self._ivy.send(message, ac_id=self.id)
 
-    def jump_to_block(self, block_id):
+    def jump_to_block(self, block_name_or_id):
+        if isinstance(int, block_name_or_id):
+            block_id = block_name_or_id
+        elif isinstance(str, block_name_or_id):
+            if block_name_or_id not in self.flight_plan_blocks:
+                raise ValueError('No \'%s\' block found, check if the plan is down linked' % block_name_or_id)
+            block_id = self.flight_plan_blocks[block_name_or_id]
+        else:
+            raise TypeError("Expected 'block_name_or_id' to be a string or an integer, found '%s'" %
+                            str(type(block_name_or_id)))
+
         m = pl.message.PprzMessage("ground", "JUMP_TO_BLOCK")
         m.set_value_by_name('ac_id', self.id)
         m.set_value_by_name('block_id', block_id)
@@ -86,5 +96,4 @@ class AircraftCommands(object):
 
     def takeoff(self):
         # Must ensure takeoff mode is activated before launching
-        assert 'Takeoff' in self.flight_plan_blocks, 'No takeoff block found, check if the plan is down linked'
-        return self.jump_to_block(self.flight_plan_blocks['Takeoff'])
+        return self.jump_to_block('Takeoff')
