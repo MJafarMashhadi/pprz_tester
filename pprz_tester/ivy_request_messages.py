@@ -21,7 +21,7 @@ def request_data(
 
     @IvySubscribeOnce(ivy_link=ivy_link,
                       message_types=[r"^((\S*\s*)?%s %s %s( .*|$))" % (new_id, message_class, request_name)])
-    def aircraft_config_callback(ac_id, msg):
+    def data_request_callback(ac_id, msg):
         logger.info(f"Received a response for %s.%s %s: %s" % (message_class, request_name, ac_id, msg))
         callback(int(ac_id), msg)
 
