@@ -3,7 +3,6 @@ import logging
 from lxml import etree
 
 import pprzlink as pl
-from ivy_request_messages import request_data
 
 logger = logging.getLogger('pprz_tester')
 
@@ -11,12 +10,10 @@ logger = logging.getLogger('pprz_tester')
 class Aircraft(object):
     def __init__(self,
                  ivy_link: pl.ivy.IvyMessagesInterface,
-                 ivy_agent_name: str,
                  ac_id: int,
                  auto_request_config: bool = True
                  ):
         self._ivy = ivy_link
-        self._ivy_agent_name = ivy_agent_name
         self.id = ac_id
         self.flight_plan_uri = None
         self.mode = None
@@ -43,12 +40,10 @@ class Aircraft(object):
             for block in fp_tree.xpath("//block"):
                 self.flight_plan_blocks[block.attrib['name']] = int(block.attrib['no'])
 
-        request_data(
-            self._ivy,
-            self._ivy_agent_name,
-            "ground",
-            "CONFIG",
-            aircraft_config_callback,
+        self._ivy.send_request(
+            class_name="ground",
+            request_name="CONFIG",
+            callback=aircraft_config_callback,
             ac_id=self.id
         )
 
@@ -89,8 +84,8 @@ class AircraftCommands(object):
                             str(type(block_name_or_id)))
 
         m = pl.message.PprzMessage("ground", "JUMP_TO_BLOCK")
-        m.set_value_by_name('ac_id', self.id)
-        m.set_value_by_name('block_id', block_id)
+        m['ac_id'] = self.id
+        m['block_id'] = block_id
 
         return self._send(m)
 
