@@ -1,5 +1,6 @@
 import logging
 from typing import List, Tuple, Optional, Union
+import inspect
 
 import pprzlink.message as message
 from pprzlink.ivy import IvyMessagesInterface
@@ -38,7 +39,11 @@ class IvySubscribe:
         else:
             self._subscribe(callback)
 
-        direct_call.__ivy_subs__ = self
+        if inspect.ismethod(f):
+            setattr(direct_call.__func__, '__ivy_subs__', self)
+        else:
+            setattr(direct_call, '__ivy_subs__', self)
+
         return direct_call
 
     def _subscribe(self, f):

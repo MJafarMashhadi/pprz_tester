@@ -3,6 +3,7 @@ import logging
 from lxml import etree
 
 import pprzlink as pl
+from ivy_subscribe import IvySubscribe
 
 logger = logging.getLogger('pprz_tester')
 
@@ -23,6 +24,9 @@ class Aircraft(object):
             self.request_config()
 
         self._ac = AircraftCommands(self)
+        # TODO: find a better way to use the decorator instead of patching like this. It defeats the purpose.
+        self._update_mode_callback = IvySubscribe(ivy_link=self._ivy, message_types=[("telemetry", "PPRZ_MODE")])\
+            (self._update_mode_callback)
 
     @property
     def commands(self):
@@ -57,6 +61,15 @@ class Aircraft(object):
             print(f'{self.id} Mode = AUTO2, ready')
 
         return True
+
+    def _update_mode_callback(self, ac_id: int, msg: pl.message.PprzMessage):
+        ac_id = int(ac_id)
+        if ac_id != self.id:
+            return
+
+        mode_changed = self.update_mode(msg)
+        if mode_changed:
+            logger.debug(f'{ac_id} changed mode to {msg}')
 
 
 class AircraftCommands(object):
