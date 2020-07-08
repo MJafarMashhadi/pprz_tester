@@ -18,6 +18,7 @@ class Aircraft(object):
         self.id = ac_id
         self.flight_plan_uri = None
         self.mode = None
+        self.current_block = None
         self.flight_plan_blocks = dict()
 
         if auto_request_config:
@@ -27,6 +28,8 @@ class Aircraft(object):
         # TODO: find a better way to use the decorator instead of patching like this. It defeats the purpose.
         self._update_mode_callback = IvySubscribe(ivy_link=self._ivy, message_types=[("telemetry", "PPRZ_MODE")])\
             (self._update_mode_callback)
+        self._navigation_callback = IvySubscribe(ivy_link=self._ivy, message_types=[("telemetry", "NAVIGATION")])\
+            (self._navigation_callback)
 
     @property
     def commands(self):
@@ -70,6 +73,25 @@ class Aircraft(object):
         mode_changed = self.update_mode(msg)
         if mode_changed:
             logger.debug(f'{ac_id} changed mode to {msg}')
+
+    def _find_block_name(self, block_id):
+        return next(filter(lambda kv: kv[1] == block_id, self.flight_plan_blocks.items()))[0]
+
+    def update_navigation_block(self, msg: pl.message.PprzMessage):
+        block_id = int(msg['cur_block'])
+        if block_id == self.current_block:
+            return False
+
+        self.current_block = block_id
+        print(f'{self.id}: in a new block: {self._find_block_name(block_id)}')
+        return True
+
+    def _navigation_callback(self, ac_id: int, msg: pl.message.PprzMessage):
+        ac_id = int(ac_id)
+        if ac_id != self.id:
+            return
+
+        self.update_navigation_block(msg)
 
 
 class AircraftCommands(object):
