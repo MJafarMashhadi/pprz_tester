@@ -11,7 +11,7 @@ logger = logging.getLogger('pprz_tester')
 class IvySubscribe:
     def __init__(self,
                  ivy_link: IvyMessagesInterface,
-                 message_types: Optional[List[Union[Tuple[str], str]]] = None
+                 message_types: Optional[List[Union[Tuple[str, str], str]]] = None
                  ):
         """
         Decorator to assign a method for listening to incoming ivy messages.
