@@ -43,8 +43,9 @@ class CurrentBlockChanged(Observer):
 class APModeChanged(Observer):
     def notify(self, property_name, old_value, new_value):
         logger.debug(f'{self.ac.id} changed mode to {new_value}')
-        if self.ac.ap_mode == 2:  # AUTO1 or AUTO2
-            print(f'{self.ac.id} Mode = AUTO2, ready')
+        if self.ac._ap_mode == 2:  # AUTO1 or AUTO2
+            logger.info(f'Aircraft {self.ac.id} Mode = AUTO2, ready')
+            self.ac.commands.takeoff()
 
 
 class CircleCountChanged(Observer):
