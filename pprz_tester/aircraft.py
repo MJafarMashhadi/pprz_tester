@@ -128,6 +128,8 @@ class AircraftCommands(object):
         m['ac_id'] = self.id
         m['block_id'] = block_id
 
+        logger.info(f'Aircraft {self.id} is going to jump to block {block_id}: {self.ac._find_block_name(block_id)}')
+
         return self._send(m)
 
     def takeoff(self):
