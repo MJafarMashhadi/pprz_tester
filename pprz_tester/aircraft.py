@@ -1,4 +1,6 @@
 import logging
+from collections import defaultdict
+from typing import Callable, Any
 
 from lxml import etree
 
@@ -21,6 +23,7 @@ class Aircraft(object):
         self._current_block = None
         self._circle_count = 0
         self.flight_plan_blocks = dict()
+        self._observers = defaultdict(list)
 
         if auto_request_config:
             self.request_config()
@@ -30,44 +33,24 @@ class Aircraft(object):
         IvySubscribe(ivy_link=self._ivy, message_types=[("telemetry", "PPRZ_MODE"), ("telemetry", "NAVIGATION")]) \
             (self.set_values_callback)
 
+    def observe(self, property_name: str, callback: Callable[[str, Any, Any], None]):
+        self._observers[property_name].append(callback)
+
+    def look_away(self, property_name: str, callback: Callable[[str, Any, Any], None]):
+        self._observers[property_name].remove(callback)
+
+    def notify_all(self, name: str, *, old_value: Any, new_value: Any):
+        for cb in self._observers[name]:
+            try:
+                cb(property_name=name, old_value=old_value, new_value=new_value)
+            except Exception as e:
+                logger.error(f'Exception while notifying an observer of {name}')
+                import traceback
+                traceback.print_exc()
+
     @property
     def commands(self):
         return self._ac
-
-    @property
-    def cur_block(self):
-        return self._current_block
-
-    @cur_block.setter
-    def cur_block(self, new_value):
-        old_value = self._current_block
-        self._current_block = new_value
-        if old_value != new_value:
-            logger.info(f'Aircraft {self.id} in block {new_value}: {self._find_block_name(new_value)}')
-
-    @property
-    def ap_mode(self):
-        return self._mode
-
-    @ap_mode.setter
-    def ap_mode(self, new_value):
-        old_value = self._mode
-        self._mode = new_value
-        if old_value != new_value:
-            logger.debug(f'{self.id} changed mode to {new_value}')
-            if self.ap_mode == 2:  # AUTO1 or AUTO2
-                print(f'{self.id} Mode = AUTO2, ready')
-
-    @property
-    def circle_count(self):
-        return self._circle_count
-
-    @circle_count.setter
-    def circle_count(self, new_value):
-        old_value = self._circle_count
-        self._circle_count = new_value
-        if old_value != new_value:
-            logger.debug(f'{self.id} circle count changed to {new_value}')
 
     def request_config(self):
         def aircraft_config_callback(ac_id, msg):
@@ -99,15 +82,22 @@ class Aircraft(object):
         if ac_id != self.id:
             return
 
-        for type, name in zip(msg.fieldtypes, msg.fieldnames):
-            if hasattr(self, name):
-                value = msg[name]
+        for vtype, name, value in zip(msg.fieldtypes, msg.fieldnames, msg.fieldvalues):
+            if name in self._observers:
                 # Patch before paparazzi/pprzlink#124 is fixed
-                if type in {'double', 'float'}:
+                if vtype in {'double', 'float'}:
                     value = float(value)
-                elif 'int' in type:
+                elif 'int' in vtype:
                     value = int(value)
-                setattr(self, name, value)
+
+                old_value = getattr(self, f'_{name}', None)
+                if not hasattr(self, f'_{name}') or old_value != value:
+                    setattr(self, f'_{name}', value)
+                    self.notify_all(
+                        name,
+                        old_value=old_value,
+                        new_value=value
+                    )
 
 
 class AircraftCommands(object):
