@@ -52,6 +52,14 @@ class CircleCountChanged(Observer):
         logger.debug(f'{self.ac.id} circle count changed to {new_value}')
 
 
+class AltitudeChanged(Observer):
+    def notify(self, property_name, old_value, new_value):
+        if old_value is not None and abs(old_value - new_value) < 0.5:
+            # Not large enough, just ignore.
+            return
+        logger.debug(f'Aircraft {self.ac.id} changed altitude to {new_value}m')
+
+
 def add_aircraft_if_new(ac_id, kwargs):
     if ac_id not in aircraft_list:
         new_ac = create_aircraft(ac_id, kwargs)
@@ -67,6 +75,7 @@ def create_aircraft(ac_id, kwargs):
     new_ac.observe('cur_block', CurrentBlockChanged(new_ac))
     new_ac.observe('ap_mode', APModeChanged(new_ac))
     new_ac.observe('circle_count', CircleCountChanged(new_ac))
+    new_ac.observe('alt', AltitudeChanged(new_ac))
     return new_ac
 
 

@@ -30,8 +30,11 @@ class Aircraft(object):
 
         self._ac = AircraftCommands(self)
         # TODO: find a better way to use the decorator instead of patching like this. It defeats the purpose.
-        IvySubscribe(ivy_link=self._ivy, message_types=[("telemetry", "PPRZ_MODE"), ("telemetry", "NAVIGATION")]) \
-            (self.set_values_callback)
+        IvySubscribe(ivy_link=self._ivy, message_types=[
+            ("telemetry", "PPRZ_MODE"),
+            ("telemetry", "NAVIGATION"),
+            ("ground", "FLIGHT_PARAM"),
+        ])(self.set_values_callback)
 
     def observe(self, property_name: str, callback: Callable[[str, Any, Any], None]):
         self._observers[property_name].append(callback)
