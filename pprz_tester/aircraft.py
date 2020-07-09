@@ -114,9 +114,9 @@ class AircraftCommands(object):
         return self._ivy.send(message, ac_id=self.id)
 
     def jump_to_block(self, block_name_or_id):
-        if isinstance(int, block_name_or_id):
+        if isinstance(block_name_or_id, int):
             block_id = block_name_or_id
-        elif isinstance(str, block_name_or_id):
+        elif isinstance(block_name_or_id, str):
             if block_name_or_id not in self.flight_plan_blocks:
                 raise ValueError('No \'%s\' block found, check if the plan is down linked' % block_name_or_id)
             block_id = self.flight_plan_blocks[block_name_or_id]
