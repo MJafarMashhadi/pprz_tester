@@ -17,8 +17,9 @@ class Aircraft(object):
         self._ivy = ivy_link
         self.id = ac_id
         self.flight_plan_uri = None
-        self.mode = None
-        self.current_block = None
+        self._mode = None
+        self._current_block = None
+        self._circle_count = 0
         self.flight_plan_blocks = dict()
 
         if auto_request_config:
@@ -26,14 +27,47 @@ class Aircraft(object):
 
         self._ac = AircraftCommands(self)
         # TODO: find a better way to use the decorator instead of patching like this. It defeats the purpose.
-        self._update_mode_callback = IvySubscribe(ivy_link=self._ivy, message_types=[("telemetry", "PPRZ_MODE")])\
-            (self._update_mode_callback)
-        self._navigation_callback = IvySubscribe(ivy_link=self._ivy, message_types=[("telemetry", "NAVIGATION")])\
-            (self._navigation_callback)
+        IvySubscribe(ivy_link=self._ivy, message_types=[("telemetry", "PPRZ_MODE"), ("telemetry", "NAVIGATION")]) \
+            (self.set_values_callback)
 
     @property
     def commands(self):
         return self._ac
+
+    @property
+    def cur_block(self):
+        return self._current_block
+
+    @cur_block.setter
+    def cur_block(self, new_value):
+        old_value = self._current_block
+        self._current_block = new_value
+        if old_value != new_value:
+            logger.info(f'Aircraft {self.id} in block {new_value}: {self._find_block_name(new_value)}')
+
+    @property
+    def ap_mode(self):
+        return self._mode
+
+    @ap_mode.setter
+    def ap_mode(self, new_value):
+        old_value = self._mode
+        self._mode = new_value
+        if old_value != new_value:
+            logger.debug(f'{self.id} changed mode to {new_value}')
+            if self.ap_mode == 2:  # AUTO1 or AUTO2
+                print(f'{self.id} Mode = AUTO2, ready')
+
+    @property
+    def circle_count(self):
+        return self._circle_count
+
+    @circle_count.setter
+    def circle_count(self, new_value):
+        old_value = self._circle_count
+        self._circle_count = new_value
+        if old_value != new_value:
+            logger.debug(f'{self.id} circle count changed to {new_value}')
 
     def request_config(self):
         def aircraft_config_callback(ac_id, msg):
@@ -54,44 +88,26 @@ class Aircraft(object):
             ac_id=self.id
         )
 
-    def update_mode(self, msg):
-        new_mode = int(msg['ap_mode'])
-        if new_mode == self.mode:
-            # No news
-            return False
-        self.mode = new_mode
-        if self.mode == 2:  # AUTO1 or AUTO2
-            print(f'{self.id} Mode = AUTO2, ready')
-
-        return True
-
-    def _update_mode_callback(self, ac_id: int, msg: pl.message.PprzMessage):
-        ac_id = int(ac_id)
-        if ac_id != self.id:
-            return
-
-        mode_changed = self.update_mode(msg)
-        if mode_changed:
-            logger.debug(f'{ac_id} changed mode to {msg}')
-
     def _find_block_name(self, block_id):
-        return next(filter(lambda kv: kv[1] == block_id, self.flight_plan_blocks.items()))[0]
+        try:
+            return next(filter(lambda kv: kv[1] == block_id, self.flight_plan_blocks.items()))[0]
+        except StopIteration:
+            return None
 
-    def update_navigation_block(self, msg: pl.message.PprzMessage):
-        block_id = int(msg['cur_block'])
-        if block_id == self.current_block:
-            return False
-
-        self.current_block = block_id
-        print(f'{self.id}: in a new block: {self._find_block_name(block_id)}')
-        return True
-
-    def _navigation_callback(self, ac_id: int, msg: pl.message.PprzMessage):
+    def set_values_callback(self, ac_id: int, msg: pl.message.PprzMessage):
         ac_id = int(ac_id)
         if ac_id != self.id:
             return
 
-        self.update_navigation_block(msg)
+        for type, name in zip(msg.fieldtypes, msg.fieldnames):
+            if hasattr(self, name):
+                value = msg[name]
+                # Patch before paparazzi/pprzlink#124 is fixed
+                if type in {'double', 'float'}:
+                    value = float(value)
+                elif 'int' in type:
+                    value = int(value)
+                setattr(self, name, value)
 
 
 class AircraftCommands(object):
@@ -127,3 +143,13 @@ class AircraftCommands(object):
     def takeoff(self):
         # Must ensure takeoff mode is activated before launching
         return self.jump_to_block('Takeoff')
+
+    def launch(self):
+        pass
+
+    def change_target_altitude(self, new_altitude):
+        m = pl.message.PprzMessage("dl", "DL_SETTING")
+        m['index'] = 4  # TODO: fix magic number
+        m['value'] = new_altitude
+
+        return self._send(m)
