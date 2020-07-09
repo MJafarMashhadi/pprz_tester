@@ -50,7 +50,7 @@ class APModeChanged(Observer):
 
 class CircleCountChanged(Observer):
     def notify(self, property_name, old_value, new_value):
-        logger.debug(f'{self.ac.id} circle count changed to {new_value}')
+        logger.info(f'Aircraft {self.ac.id} circle count changed to {new_value}')
 
 
 class AltitudeChanged(Observer):
@@ -58,7 +58,7 @@ class AltitudeChanged(Observer):
         if old_value is not None and abs(old_value - new_value) < 0.5:
             # Not large enough, just ignore.
             return
-        logger.debug(f'Aircraft {self.ac.id} changed altitude to {new_value}m')
+        logger.info(f'Aircraft {self.ac.id} changed altitude to {new_value}m')
 
 
 def add_aircraft_if_new(ac_id, kwargs):
