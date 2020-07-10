@@ -1,8 +1,7 @@
 import logging
-from collections import defaultdict
-from typing import Callable, Any, Dict
 import re
 from collections import defaultdict
+from typing import Callable, Any, Dict
 
 from lxml import etree
 
