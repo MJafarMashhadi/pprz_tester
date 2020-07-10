@@ -1,6 +1,8 @@
 import logging
 from collections import defaultdict
-from typing import Callable, Any
+from typing import Callable, Any, Dict
+import re
+from collections import defaultdict
 
 from lxml import etree
 
@@ -8,6 +10,30 @@ import pprzlink as pl
 from ivy_subscribe import IvySubscribe
 
 logger = logging.getLogger('pprz_tester')
+
+
+class AircraftParameters:
+    def __init__(self, ac):
+        self.ac = ac
+        self.values: Dict[str, Dict[str, Any]] = defaultdict(lambda: defaultdict(lambda: None))
+
+    def _is_ac_param(self, name):
+        return re.match(r'[a-z_]+__[\w_]+', name)
+
+    def __getattr__(self, item):
+        if not self._is_ac_param(item):
+            raise AttributeError(f'Parameter \'{item}\' not found.')
+
+        msg_class, param_name = item.split('__')
+        val = self.values[msg_class][param_name]
+        return val
+
+    def __setattr__(self, key, value):
+        if not self._is_ac_param(key):
+            return super(AircraftParameters, self).__setattr__(key, value)
+
+        msg_class, param_name = key.split('__')
+        self.values[msg_class][param_name] = value
 
 
 class Aircraft(object):
@@ -24,6 +50,7 @@ class Aircraft(object):
         self._circle_count = 0
         self.flight_plan_blocks = dict()
         self._observers = defaultdict(list)
+        self._params = AircraftParameters(self)
 
         if auto_request_config:
             self.request_config()
@@ -55,6 +82,10 @@ class Aircraft(object):
     def commands(self):
         return self._ac
 
+    @property
+    def params(self):
+        return self._params
+
     def request_config(self):
         def aircraft_config_callback(ac_id, msg):
             assert int(ac_id) == self.id
@@ -74,7 +105,7 @@ class Aircraft(object):
             ac_id=self.id
         )
 
-    def _find_block_name(self, block_id):
+    def find_block_name(self, block_id):
         try:
             return next(filter(lambda kv: kv[1] == block_id, self.flight_plan_blocks.items()))[0]
         except StopIteration:
@@ -85,17 +116,18 @@ class Aircraft(object):
         if ac_id != self.id:
             return
 
-        for vtype, name, value in zip(msg.fieldtypes, msg.fieldnames, msg.fieldvalues):
-            if name in self._observers:
-                # Patch before paparazzi/pprzlink#124 is fixed
-                if vtype in {'double', 'float'}:
-                    value = float(value)
-                elif 'int' in vtype:
-                    value = int(value)
+        for vtype, fieldname, value in zip(msg.fieldtypes, msg.fieldnames, msg.fieldvalues):
+            name = f'{msg.name.lower()}__{fieldname}'
+            # Patch before paparazzi/pprzlink#124 is fixed
+            if vtype in {'double', 'float'}:
+                value = float(value)
+            elif 'int' in vtype:
+                value = int(value)
 
-                old_value = getattr(self, f'_{name}', None)
-                if not hasattr(self, f'_{name}') or old_value != value:
-                    setattr(self, f'_{name}', value)
+            old_value = getattr(self.params, name, None)
+            if old_value != value:
+                setattr(self.params, name, value)
+                if name in self._observers:
                     self.notify_all(
                         name,
                         old_value=old_value,
@@ -131,7 +163,7 @@ class AircraftCommands(object):
         m['ac_id'] = self.id
         m['block_id'] = block_id
 
-        logger.info(f'Aircraft {self.id} is going to jump to block {block_id}: {self.ac._find_block_name(block_id)}')
+        logger.info(f'Aircraft {self.id} is going to jump to block {block_id}: {self.ac.find_block_name(block_id)}')
 
         return self._send(m)
 

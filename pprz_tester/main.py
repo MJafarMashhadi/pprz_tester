@@ -37,13 +37,13 @@ class Observer:
 
 class CurrentBlockChanged(Observer):
     def notify(self, property_name, old_value, new_value):
-        logger.info(f'Aircraft {self.ac.id} in block {new_value}: {self.ac._find_block_name(new_value)}')
+        logger.info(f'Aircraft {self.ac.id} in block {new_value}: {self.ac.find_block_name(new_value)}')
 
 
 class APModeChanged(Observer):
     def notify(self, property_name, old_value, new_value):
         logger.debug(f'{self.ac.id} changed mode to {new_value}')
-        if self.ac._ap_mode == 2:  # AUTO1 or AUTO2
+        if self.ac.params.pprz_mode__ap_mode == 2:  # AUTO1 or AUTO2
             logger.info(f'Aircraft {self.ac.id} Mode = AUTO2, ready')
             self.ac.commands.takeoff()
 
@@ -73,10 +73,10 @@ def create_aircraft(ac_id, kwargs):
         ac_id=ac_id,
         **kwargs
     )
-    new_ac.observe('cur_block', CurrentBlockChanged(new_ac))
-    new_ac.observe('ap_mode', APModeChanged(new_ac))
-    new_ac.observe('circle_count', CircleCountChanged(new_ac))
-    new_ac.observe('alt', AltitudeChanged(new_ac))
+    new_ac.observe('navigation__cur_block', CurrentBlockChanged(new_ac))
+    new_ac.observe('navigation__circle_count', CircleCountChanged(new_ac))
+    new_ac.observe('pprz_mode__ap_mode', APModeChanged(new_ac))
+    new_ac.observe('flight_param__alt', AltitudeChanged(new_ac))
     return new_ac
 
 
