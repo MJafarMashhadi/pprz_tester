@@ -44,10 +44,10 @@ class Aircraft(object):
         self._ivy = ivy_link
         self.id = ac_id
         self.flight_plan_uri = None
-        self._mode = None
-        self._current_block = None
-        self._circle_count = 0
+        self.airframe_settings_uri = None
+        self.name = None
         self.flight_plan_blocks = dict()
+        self.setting_items = dict()
         self._observers = defaultdict(list)
         self._params = AircraftParameters(self)
 
@@ -85,17 +85,31 @@ class Aircraft(object):
     def params(self):
         return self._params
 
+    def __str__(self):
+        return f'Aircraft <id={self.id}, name={self.name}, loaded_fp={self.flight_plan_uri is not None}>'
+
     def request_config(self):
         def aircraft_config_callback(ac_id, msg):
             assert int(ac_id) == self.id
 
             logger.info(f"Got new aircraft config {ac_id}: {msg}")
-            flight_plan_uri = msg['flight_plan']
+            self.flight_plan_uri = msg['flight_plan']
+            self.airframe_settings_uri = msg['settings']
+            self.name = msg['ac_name']
 
-            logger.info(f"Loading flight plan {ac_id}: {flight_plan_uri}")
-            fp_tree = etree.parse(flight_plan_uri)
+            logger.info(f"Loading flight plan {ac_id}: {self.flight_plan_uri}")
+            fp_tree = etree.parse(self.flight_plan_uri)
             for block in fp_tree.xpath("//block"):
                 self.flight_plan_blocks[block.attrib['name']] = int(block.attrib['no'])
+
+            logger.info(f"Loading settings {ac_id}: {self.airframe_settings_uri}")
+            settings_tree = etree.parse(self.airframe_settings_uri)
+            for order, settings_item in enumerate(settings_tree.xpath('//dl_setting')):
+                name = settings_item.attrib['var']
+                values = dict(settings_item.attrib)
+                values.pop('var')
+                values['order'] = order
+                self.setting_items[name] = values
 
         self._ivy.send_request(
             class_name="ground",
@@ -147,6 +161,12 @@ class AircraftCommands(object):
     def _send(self, message):
         return self._ivy.send(message, ac_id=self.id)
 
+    def _send_setting_update(self, setting_name, setting_value):
+        m = pl.message.PprzMessage("datalink", "DL_SETTING")
+        m['index'] = self.setting_items[setting_name]['order']
+        m['value'] = setting_value
+        return self._send(m)
+
     def jump_to_block(self, block_name_or_id):
         if isinstance(block_name_or_id, int):
             block_id = block_name_or_id
@@ -174,8 +194,4 @@ class AircraftCommands(object):
         pass
 
     def change_target_altitude(self, new_altitude):
-        m = pl.message.PprzMessage("dl", "DL_SETTING")
-        m['index'] = 4  # TODO: fix magic number
-        m['value'] = new_altitude
-
-        return self._send(m)
+        return self._send_setting_update(setting_name='flight_altitude', setting_value=new_altitude)
