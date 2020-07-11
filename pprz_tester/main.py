@@ -37,7 +37,10 @@ class Observer:
 
 class CurrentBlockChanged(Observer):
     def notify(self, property_name, old_value, new_value):
-        logger.info(f'Aircraft {self.ac.id} in block {new_value}: {self.ac.find_block_name(new_value)}')
+        block_name = self.ac.find_block_name(new_value)
+        logger.info(f'Aircraft {self.ac.id} in block {new_value}: {block_name}')
+        if block_name == 'Takeoff':
+            self.ac.commands.launch()
 
 
 class APModeChanged(Observer):

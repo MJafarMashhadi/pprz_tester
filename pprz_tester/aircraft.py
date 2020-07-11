@@ -192,7 +192,7 @@ class AircraftCommands(object):
         return self.jump_to_block('Takeoff')
 
     def launch(self):
-        pass
+        return self._send_setting_update(setting_name='autopilot.launch', setting_value=1)
 
     def change_target_altitude(self, new_altitude):
         return self._send_setting_update(setting_name='flight_altitude', setting_value=new_altitude)
