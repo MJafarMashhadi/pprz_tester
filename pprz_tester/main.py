@@ -6,8 +6,8 @@ from typing import Dict
 
 import pprzlink as pl
 
-from ivy_subscribe import IvySubscribe
-import aircraft
+from pprz_tester.pprzlink_enhancements import IvySubscribe
+from pprz_tester import aircraft
 
 logger = logging.getLogger('pprz_tester')
 logger.setLevel(logging.DEBUG)

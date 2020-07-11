@@ -6,7 +6,7 @@ from typing import Callable, Any, Dict
 from lxml import etree
 
 import pprzlink as pl
-from ivy_subscribe import IvySubscribe
+from pprz_tester.pprzlink_enhancements import IvySubscribe
 
 logger = logging.getLogger('pprz_tester')
 
