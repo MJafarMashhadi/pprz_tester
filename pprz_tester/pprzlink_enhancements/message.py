@@ -20,7 +20,7 @@ class MessageBuilder:
         return self
 
     def build(self):
-        m = PprzMessage(self.class_name, self.message_name)
+        m = PprzMessage(self._class_name, self._message_name)
         for k, v in self._payload.items():
             m[k] = v
 
