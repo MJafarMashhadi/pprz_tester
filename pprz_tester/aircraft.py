@@ -6,7 +6,7 @@ from typing import Callable, Any, Dict
 from lxml import etree
 
 import pprzlink as pl
-from pprz_tester.pprzlink_enhancements import IvySubscribe
+from pprz_tester.pprzlink_enhancements import IvySubscribe, MessageBuilder
 
 logger = logging.getLogger('pprz_tester')
 
@@ -16,7 +16,8 @@ class AircraftParameters:
         self.ac = ac
         self.values: Dict[str, Dict[str, Any]] = defaultdict(lambda: defaultdict(lambda: None))
 
-    def _is_ac_param(self, name):
+    @staticmethod
+    def _is_ac_param(name):
         return re.match(r'[a-z_]+__[\w_]+', name)
 
     def __getattr__(self, item):
@@ -162,30 +163,35 @@ class AircraftCommands(object):
         return self._ivy.send(message, ac_id=self.id)
 
     def _send_setting_update(self, setting_name, setting_value):
-        m = pl.message.PprzMessage("ground", "DL_SETTING")
-        m['ac_id'] = self.ac.id
-        m['index'] = self.setting_items[setting_name]['order']
-        m['value'] = setting_value
-        return self._send(m)
+        return self._send(
+            MessageBuilder(class_name="ground", message_name="DL_SETTING")
+            .p('ac_id', self.ac.id)
+            .p('index', self.setting_items[setting_name]['order'])
+            .p('value', setting_value)
+            .build()
+        )
 
     def jump_to_block(self, block_name_or_id):
         if isinstance(block_name_or_id, int):
             block_id = block_name_or_id
+            block_name = self.ac.find_block_name(block_id)
         elif isinstance(block_name_or_id, str):
             if block_name_or_id not in self.flight_plan_blocks:
                 raise ValueError('No \'%s\' block found, check if the plan is down linked' % block_name_or_id)
-            block_id = self.flight_plan_blocks[block_name_or_id]
+            block_name = block_name_or_id
+            block_id = self.flight_plan_blocks[block_name]
         else:
             raise TypeError("Expected 'block_name_or_id' to be a string or an integer, found '%s'" %
                             str(type(block_name_or_id)))
 
-        m = pl.message.PprzMessage("ground", "JUMP_TO_BLOCK")
-        m['ac_id'] = self.id
-        m['block_id'] = block_id
+        logger.info(f'Aircraft {self.id} is going to jump to block {block_id}: {block_name}')
 
-        logger.info(f'Aircraft {self.id} is going to jump to block {block_id}: {self.ac.find_block_name(block_id)}')
-
-        return self._send(m)
+        return self._send(
+            MessageBuilder(class_name="ground", message_name="JUMP_TO_BLOCK")
+            .p('ac_id', self.id)
+            .p('block_id', block_id)
+            .build()
+        )
 
     def takeoff(self):
         # Must ensure takeoff mode is activated before launching

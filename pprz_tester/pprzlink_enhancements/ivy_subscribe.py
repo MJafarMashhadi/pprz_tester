@@ -4,6 +4,7 @@ import inspect
 
 import pprzlink.message as message
 from pprzlink.ivy import IvyMessagesInterface
+from . import MessageBuilder
 
 logger = logging.getLogger('pprz_tester')
 
@@ -50,10 +51,10 @@ class IvySubscribe:
         for subscription_pattern in self.message_types:
             if isinstance(subscription_pattern, tuple):
                 message_class, message_name = subscription_pattern
-                msg_type_obj = message.PprzMessage(
-                    class_name=message_class,
-                    msg=message_name
-                )
+                msg_type_obj = MessageBuilder()\
+                    .class_name(message_class)\
+                    .message_name(message_name)\
+                    .build()
                 subscription_id = self.ivy_link.subscribe(f, regex_or_msg=msg_type_obj)
                 logger.info(f"Function {self.function_name} is listening to {message_class}.{message_name}")
             elif isinstance(subscription_pattern, str):
