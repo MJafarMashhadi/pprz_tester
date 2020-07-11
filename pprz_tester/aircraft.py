@@ -163,6 +163,7 @@ class AircraftCommands(object):
 
     def _send_setting_update(self, setting_name, setting_value):
         m = pl.message.PprzMessage("ground", "DL_SETTING")
+        m['ac_id'] = self.ac.id
         m['index'] = self.setting_items[setting_name]['order']
         m['value'] = setting_value
         return self._send(m)
