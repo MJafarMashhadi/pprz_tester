@@ -25,6 +25,10 @@ class AircraftParameters:
             raise AttributeError(f'Parameter \'{item}\' not found.')
 
         msg_class, param_name = item.split('__')
+        if msg_class in self.values and self.values[msg_class] and param_name not in self.values[msg_class]:
+            raise AttributeError(f'Parameter {param_name} is not found in {msg_class}. '
+                                 f'Known valid parameters are {", ".join(self.values[msg_class].keys())}')
+
         val = self.values[msg_class][param_name]
         return val
 
