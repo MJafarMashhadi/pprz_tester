@@ -1,5 +1,3 @@
-lxml
-ivy-python                             
-pyserial
-breathe
-
+-r pprzlink/requirements.txt
+pandas
+tables
