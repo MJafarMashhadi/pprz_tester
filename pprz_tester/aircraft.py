@@ -65,6 +65,9 @@ class Aircraft(object):
             ("telemetry", "PPRZ_MODE"),
             ("telemetry", "NAVIGATION"),
             ("ground", "FLIGHT_PARAM"),
+            ("ground", "ENGINE_STATUS"),
+            ("ground", "CIRCLE_STATUS"),
+            ("ground", "WAYPOINT_MOVED"),
         ])(self.set_values_callback)
 
     def observe(self, property_name: str, callback: Callable[[str, Any, Any], None]):
