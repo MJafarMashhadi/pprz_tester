@@ -1,5 +1,7 @@
 import sys
 
+from observer import Observer
+
 sys.path.append("../pprzlink/lib/v1.0/python")
 import logging
 from typing import Dict
@@ -27,17 +29,6 @@ ivy = pl.ivy.IvyMessagesInterface(
 )
 
 aircraft_list: Dict[int, aircraft.Aircraft] = dict()
-
-
-class Observer:
-    def __init__(self, ac):
-        self.ac = ac
-
-    def __call__(self, property_name, old_value, new_value):
-        self.notify(property_name, old_value, new_value)
-
-    def notify(self, property_name, old_value, new_value):
-        raise NotImplementedError()
 
 
 class CurrentBlockChanged(Observer):
