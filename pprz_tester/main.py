@@ -3,6 +3,10 @@ import sys
 sys.path.append("../pprzlink/lib/v1.0/python")
 import logging
 from typing import Dict
+import datetime
+
+import pandas as pd
+import os
 
 import pprzlink as pl
 
@@ -15,7 +19,8 @@ logger.handlers.clear()
 logger.addHandler(logging.StreamHandler())
 
 agent_name = "MJafarIvyAgent"
-
+start_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S.hd5")
+log_file_name = os.path.join("logs/fit/", start_time)
 ivy = pl.ivy.IvyMessagesInterface(
     agent_name=agent_name,
     start_ivy=True,
@@ -64,6 +69,41 @@ class AltitudeChanged(Observer):
         logger.info(f'Aircraft {self.ac.id} changed altitude to {new_value}m')
 
 
+class RecordFlight(Observer):
+    def __init__(self, ac):
+        super(RecordFlight, self).__init__(ac)
+        self.history = {name: list() for name in ['unix_time', 'roll', 'pitch', 'heading', 'lat', 'long', 'speed', 'course', 'alt',
+                                                  'climb', 'agl', 'itow', 'airspeed']}
+        self._df = None
+
+    def notify(self, property_name, old_value, new_value: pl.message.PprzMessage):
+        msg_dict = new_value.to_dict()
+        msg_dict.pop('msgname')
+        msg_dict.pop('msgclass')
+        msg_dict.pop('ac_id')
+        for k in self.history:  # They share keys, no need for checking if history.keys() is a subset of msg_dict
+            self.history[k].append(msg_dict[k])
+        self._df = None  # Not thread safe
+        if len(self.history['unix_time']) % 10 == 0:
+            # Periodic save
+            self._save_history()
+
+    def _save_history(self):
+        self.history_df.to_hdf(log_file_name, self.ac.id)
+
+    @property
+    def history_df(self):  # Not thread safe
+        if self._df is None:
+            df = pd.DataFrame(self.history)
+            df['unix_time'] = pd.to_datetime(df['unix_time'], unit='s')
+            df.set_index('unix_time', inplace=True)
+            self._df = df
+        return self._df
+
+    def __del__(self):
+        self._save_history()
+
+
 def add_aircraft_if_new(ac_id, kwargs):
     if ac_id not in aircraft_list:
         new_ac = create_aircraft(ac_id, kwargs)
@@ -80,6 +120,7 @@ def create_aircraft(ac_id, kwargs):
     new_ac.observe('navigation__circle_count', CircleCountChanged(new_ac))
     new_ac.observe('pprz_mode__ap_mode', APModeChanged(new_ac))
     new_ac.observe('flight_param__alt', AltitudeChanged(new_ac))
+    new_ac.observe('flight_param', RecordFlight(new_ac))
     return new_ac
 
 
