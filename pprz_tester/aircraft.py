@@ -73,7 +73,7 @@ class Aircraft(object):
     def look_away(self, property_name: str, callback: Callable[[str, Any, Any], None]):
         self._observers[property_name].remove(callback)
 
-    def notify_all(self, name: str, *, old_value: Any, new_value: Any):
+    def _notify_all(self, name: str, *, old_value: Any, new_value: Any):
         for cb in self._observers[name]:
             try:
                 cb(property_name=name, old_value=old_value, new_value=new_value)
@@ -134,23 +134,28 @@ class Aircraft(object):
         if ac_id != self.id:
             return
 
+        # Patch before paparazzi/pprzlink#124 is fixed
         for vtype, fieldname, value in zip(msg.fieldtypes, msg.fieldnames, msg.fieldvalues):
-            name = f'{msg.name.lower()}__{fieldname}'
-            # Patch before paparazzi/pprzlink#124 is fixed
             if vtype in {'double', 'float'}:
-                value = float(value)
+                msg[fieldname] = float(value)
             elif 'int' in vtype:
-                value = int(value)
+                msg[fieldname] = int(value)
 
+        for fieldname, value in zip(msg.fieldnames, msg.fieldvalues):
+            name = f'{msg.name.lower()}__{fieldname}'
             old_value = getattr(self.params, name, None)
             if old_value != value:
                 setattr(self.params, name, value)
-                if name in self._observers:
-                    self.notify_all(
-                        name,
-                        old_value=old_value,
-                        new_value=value
-                    )
+                self._notify_all(
+                    name,
+                    old_value=old_value,
+                    new_value=value
+                )
+        self._notify_all(
+            msg.name.lower(),
+            old_value=None,
+            new_value=msg
+        )
 
 
 class AircraftCommands(object):
