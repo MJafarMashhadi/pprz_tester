@@ -50,6 +50,9 @@ class APModeChanged(Observer):
 class CircleCountChanged(Observer):
     def notify(self, property_name, old_value, new_value):
         logger.info(f'Aircraft {self.ac.id} circle count changed to {new_value}')
+        if self.ac.params.navigation__cur_block == self.ac.flight_plan_blocks['Standby'] and new_value >= 1:
+            # End of circle
+            self.ac.commands.jump_to_block('Survey S1-S2')
 
 
 class AltitudeChanged(Observer):
