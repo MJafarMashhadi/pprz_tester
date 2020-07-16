@@ -1,6 +1,7 @@
 import sys
 
 from observer import Observer
+from pprzlink_enhancements import MessageBuilder
 
 sys.path.append("../pprzlink/lib/v1.0/python")
 import logging
@@ -16,12 +17,12 @@ from pprz_tester.pprzlink_enhancements import IvySubscribe
 from pprz_tester import aircraft
 
 logger = logging.getLogger('pprz_tester')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 logger.handlers.clear()
 logger.addHandler(logging.StreamHandler())
 
 agent_name = "MJafarIvyAgent"
-start_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S.hd5")
+start_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S.csv")
 log_file_name = os.path.join("../logs/", start_time)
 ivy = pl.ivy.IvyMessagesInterface(
     agent_name=agent_name,
@@ -45,6 +46,10 @@ class APModeChanged(Observer):
         if self.ac.params.pprz_mode__ap_mode == 2:  # AUTO1 or AUTO2
             logger.info(f'Aircraft {self.ac.id} Mode = AUTO2, ready')
             self.ac.commands.takeoff()
+            ivy.send(MessageBuilder('ground', 'MOVE_WAYPOINT').p('ac_id', self.ac.id).p('alt', 300)
+                     .p('wp_id', 3).p('lat', 43.4659053).p('long', 1.2700005).build())
+            ivy.send(MessageBuilder('ground', 'MOVE_WAYPOINT').p('ac_id', self.ac.id).p('alt', 300)
+                     .p('wp_id', 4).p('lat', 43.4654170).p('long', 1.2799074).build())
 
 
 class CircleCountChanged(Observer):
@@ -52,7 +57,7 @@ class CircleCountChanged(Observer):
         logger.info(f'Aircraft {self.ac.id} circle count changed to {new_value}')
         if self.ac.params.navigation__cur_block == self.ac.flight_plan_blocks['Standby'] and new_value >= 1:
             # End of circle
-            self.ac.commands.jump_to_block('Survey S1-S2')
+            self.ac.commands.jump_to_block('Oval 1-2')
 
 
 class AltitudeChanged(Observer):
@@ -66,8 +71,8 @@ class AltitudeChanged(Observer):
 class RecordFlight(Observer):
     def __init__(self, ac):
         super(RecordFlight, self).__init__(ac)
-        self.history = {name: list() for name in ['unix_time', 'roll', 'pitch', 'heading', 'lat', 'long', 'speed', 'course', 'alt',
-                                                  'climb', 'agl', 'itow', 'airspeed']}
+        self.history = {name: list() for name in ['unix_time', 'roll', 'pitch', 'heading', 'agl', 'airspeed',
+                                                  'throttle', ]}
         self._df = None
 
     def notify(self, property_name, old_value, new_value: pl.message.PprzMessage):
@@ -75,8 +80,11 @@ class RecordFlight(Observer):
         msg_dict.pop('msgname')
         msg_dict.pop('msgclass')
         msg_dict.pop('ac_id')
-        for k in self.history:  # They share keys, no need for checking if history.keys() is a subset of msg_dict
+        for k in self.history.keys() & msg_dict.keys():
             self.history[k].append(msg_dict[k])
+        self.history['throttle'].append(self.ac.params.engine_status__throttle)
+
+        # Invalidate DF cache
         self._df = None  # Not thread safe
         if len(self.history['unix_time']) % 10 == 0:
             # Periodic save
@@ -84,7 +92,8 @@ class RecordFlight(Observer):
 
     def _save_history(self):
         logger.debug(f"Saving aircraft telemetry logs to {log_file_name}")
-        self.history_df.to_hdf(log_file_name, f'ac_{self.ac.id}')
+        # self.history_df.to_hdf(log_file_name, f'ac_{self.ac.id}')
+        self.history_df.to_csv(log_file_name)
 
     @property
     def history_df(self):  # Not thread safe
