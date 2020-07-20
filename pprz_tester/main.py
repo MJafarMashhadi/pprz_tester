@@ -150,6 +150,8 @@ def request_aircraft_list():
 
 
 def main():
+    import time
+    time.sleep(0.1)  # TOFF
     request_aircraft_list()
 
 
