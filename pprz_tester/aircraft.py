@@ -64,6 +64,7 @@ class Aircraft(object):
         IvySubscribe(ivy_link=self._ivy, message_types=[
             ("telemetry", "PPRZ_MODE"),
             ("telemetry", "NAVIGATION"),
+            ("telemetry", "COMMANDS"),
             ("ground", "FLIGHT_PARAM"),
             ("ground", "ENGINE_STATUS"),
             ("ground", "CIRCLE_STATUS"),
@@ -139,10 +140,16 @@ class Aircraft(object):
 
         # Patch before paparazzi/pprzlink#124 is fixed
         for vtype, fieldname, value in zip(msg.fieldtypes, msg.fieldnames, msg.fieldvalues):
+            modifier = lambda V: V
             if vtype in {'double', 'float'}:
-                msg[fieldname] = float(value)
+                modifier = float
             elif 'int' in vtype:
-                msg[fieldname] = int(value)
+                modifier = int
+            if '[' in vtype and 'char' not in vtype:
+                _modifier = modifier
+                modifier = lambda V: [_modifier(X) for X in V]
+
+            msg[fieldname] = modifier(value)
 
         for fieldname, value in zip(msg.fieldnames, msg.fieldvalues):
             name = f'{msg.name.lower()}__{fieldname}'
