@@ -22,8 +22,7 @@ logger.handlers.clear()
 logger.addHandler(logging.StreamHandler())
 
 agent_name = "MJafarIvyAgent"
-start_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S.csv")
-log_file_name = os.path.join("../logs/", start_time)
+start_time = datetime.datetime.now().strftime("%m%d-%H%M%S")
 ivy = pl.ivy.IvyMessagesInterface(
     agent_name=agent_name,
     start_ivy=True,
@@ -91,9 +90,12 @@ class RecordFlight(Observer):
             self._save_history()
 
     def _save_history(self):
-        logger.debug(f"Saving aircraft telemetry logs to {log_file_name}")
-        # self.history_df.to_hdf(log_file_name, f'ac_{self.ac.id}')
-        self.history_df.to_csv(log_file_name)
+        log_file_name = f'{self.ac.name}_{start_time}'
+        log_file_addr = os.path.join("..", "logs", log_file_name)
+
+        logger.debug(f"Saving aircraft telemetry logs to {log_file_addr}")
+        # self.history_df.to_hdf(log_file_addr + '.hd5', f'ac_{self.ac.id}')
+        self.history_df.to_csv(log_file_addr + '.csv')
 
     @property
     def history_df(self):  # Not thread safe
