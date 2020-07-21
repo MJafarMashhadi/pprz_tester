@@ -71,10 +71,17 @@ class RecordFlight(Observer):
     def __init__(self, ac):
         super(RecordFlight, self).__init__(ac)
         self.history = {name: list() for name in ['unix_time', 'roll', 'pitch', 'heading', 'agl', 'airspeed',
-                                                  'throttle', ]}
+                                                  'throttle', 'aileron', 'elevator', 'rudder', 'flaps']}
+        self.ready = False
         self._df = None
 
     def notify(self, property_name, old_value, new_value: pl.message.PprzMessage):
+        if not self.ready and any(required is None for required in [
+            self.ac.params.commands__values,
+            self.ac.params.engine_status__throttle,
+        ]):
+            return
+        self.ready = True
         msg_dict = new_value.to_dict()
         msg_dict.pop('msgname')
         msg_dict.pop('msgclass')
@@ -82,6 +89,16 @@ class RecordFlight(Observer):
         for k in self.history.keys() & msg_dict.keys():
             self.history[k].append(msg_dict[k])
         self.history['throttle'].append(self.ac.params.engine_status__throttle)
+        if self.ac.id == 14:   # Microjet
+            _, roll, pitch, _ = self.ac.params.commands__values  # throttle, roll, pitch, shutter
+            yaw = 0
+        elif self.ac.id == 2:  # Bixler
+            _, roll, pitch, yaw = self.ac.params.commands__values  # throttle, roll, pitch, yaw
+
+        self.history['aileron'].append(roll)
+        self.history['elevator'].append(pitch)
+        self.history['rudder'].append(yaw)
+        self.history['flaps'].append(0)
 
         # Invalidate DF cache
         self._df = None  # Not thread safe
