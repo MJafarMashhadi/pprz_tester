@@ -44,6 +44,9 @@ class PlanItemOr(PlanItem):
 
         return self.items[self.matching_item].act(*args, **kwargs)
 
+    def __str__(self):
+        return '<Flight plan combo:' + ' | '.join(str(item) for item in self.items) + '>'
+
 
 class PlanItemAnd(PlanItem):
     def __init__(self, *items, **kwargs):
@@ -70,6 +73,9 @@ class PlanItemAnd(PlanItem):
                 success = False
 
         return success
+
+    def __str__(self):
+        return '<Flight plan combo:' + ' & '.join(str(item) for item in self.all_items) + '>'
 
 
 class PlanItemWaitForState(PlanItem):
@@ -99,6 +105,9 @@ class PlanItemWaitForState(PlanItem):
 
         return super(PlanItemWaitForState, self).act(*args, **kwargs)
 
+    def __str__(self):
+        return f'<Flight plan item: wait for state {self.state_name_or_id}>'
+
 
 class PlanItemJumpToState(PlanItem):
     def __init__(self, state_id_or_name, *args, **kwargs):
@@ -110,6 +119,9 @@ class PlanItemJumpToState(PlanItem):
 
     def act(self, ac, property_name, old_value, new_value):
         ac.commands.jump_to_block(self.state_name_or_id)
+
+    def __str__(self):
+        return f'<Flight plan item: go to state {self.state_name_or_id}>'
 
 
 class PlanItemSendMessage(PlanItem):
@@ -123,6 +135,9 @@ class PlanItemSendMessage(PlanItem):
     def act(self, ac, *args):
         message = self.message_builder(ac, *args)
         ac.commands._send(message)
+
+    def __str__(self):
+        return f'<Flight plan item: send ivy message>'
 
 
 class PlanItemWaitForCircles(PlanItem):
@@ -139,6 +154,9 @@ class PlanItemWaitForCircles(PlanItem):
             return False
 
         return new_value >= self.n_circles
+
+    def __str__(self):
+        return f'<Flight plan item: wait for {self.n_circles} circles>'
 
 
 class FlightPlanPerformingObserver(Observer):
