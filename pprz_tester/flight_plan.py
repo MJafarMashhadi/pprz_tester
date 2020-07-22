@@ -1,4 +1,5 @@
 import logging
+import math
 from typing import List
 
 from observer import Observer
@@ -24,8 +25,7 @@ class PlanItem:
         if self.actor:
             return self.actor(ac, property_name, old_value, new_value)
 
-        raise NotImplementedError()
-        # return True if finished successfully, return False to keep on queue
+        return True
 
 
 class PlanItemOr(PlanItem):
@@ -35,9 +35,12 @@ class PlanItemOr(PlanItem):
         self.items = items
 
     def match(self, *args, **kwargs):
+        self.matching_item = None
         for idx, item in enumerate(self.items):
             if item.match(*args, **kwargs):
                 self.matching_item = idx
+                return True
+        return False
 
     def act(self, *args, **kwargs):
         if not self.matching_item:
@@ -100,12 +103,6 @@ class PlanItemWaitForState(PlanItem):
             state_id = self.state_name_or_id
             return state_id == new_state_id
 
-    def act(self, *args, **kwargs):
-        if not self.actor:
-            return True
-
-        return super(PlanItemWaitForState, self).act(*args, **kwargs)
-
     def __str__(self):
         return f'<Flight plan item: wait for state {self.state_name_or_id}>'
 
@@ -114,9 +111,6 @@ class PlanItemJumpToState(PlanItem):
     def __init__(self, state_id_or_name, *args, **kwargs):
         super(PlanItemJumpToState, self).__init__(*args, **kwargs)
         self.state_name_or_id = state_id_or_name
-
-    def match(self, ac, property_name, old_value, new_value):
-        return True
 
     def act(self, ac, property_name, old_value, new_value):
         ac.commands.jump_to_block(self.state_name_or_id)
@@ -166,6 +160,28 @@ class PlanItemWaitForCircles(PlanItem):
         return f'<Flight plan item: wait for {self.n_circles} circles>'
 
 
+class PlanItemWaitClimb(PlanItem):
+    def __init__(self, tolerance=5, *args, **kwargs):
+        super(PlanItemWaitClimb, self).__init__(*args, **kwargs)
+        self.tolerance = tolerance
+        self.last_value = None
+
+    def match(self, ac, property_name, old_value, new_value):
+        if property_name == 'flight_param':
+            old_value = self.last_value
+            new_alt = new_value['alt']
+            self.last_value = new_alt
+        else:
+            return False
+
+        return old_value is not None \
+           and math.fabs(old_value - new_alt) < self.tolerance \
+           and math.fabs(new_value['climb']) < (self.tolerance / 10.)
+
+    def __str__(self):
+        return f'<Flight plan item: wait until altitude stabilizes, tolerance={self.tolerance}m>'
+
+
 class FlightPlanPerformingObserver(Observer):
     def __init__(self, ac, plan_items=list()):
         super(FlightPlanPerformingObserver, self).__init__(ac)
@@ -195,4 +211,3 @@ class FlightPlanPerformingObserver(Observer):
                 else:
                     logger.error(f'Failed to perform a flight plan item, keeping the item on the queue.')
                     break
-

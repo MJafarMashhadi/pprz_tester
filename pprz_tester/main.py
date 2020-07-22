@@ -1,7 +1,7 @@
 import sys
 
 from flight_plan import PlanItemWaitForState, PlanItemAnd, PlanItemJumpToState, \
-    PlanItemWaitForCircles, FlightPlanPerformingObserver
+    FlightPlanPerformingObserver, PlanItemWaitClimb
 from flight_plan_generator import move_waypoints, WaypointLocation, takeoff_and_launch, wait_for_mode_2, \
     VALID_RANGE_LAT, VALID_RANGE_LON
 from observer import Observer
@@ -123,7 +123,8 @@ def create_aircraft(ac_id, kwargs):
     }) + [
         PlanItemAnd(
             PlanItemWaitForState(state_name_or_id='Standby', actor=lambda *_: None),
-            PlanItemWaitForCircles(n_circles=1, actor=lambda *_: None),
+            # PlanItemWaitForCircles(n_circles=1, actor=lambda *_: None),
+            PlanItemWaitClimb(tolerance=5),
         ),
     ]
 
@@ -133,6 +134,7 @@ def create_aircraft(ac_id, kwargs):
     new_ac.observe('navigation__cur_block', flight_plan_runner)
     new_ac.observe('navigation__circle_count', flight_plan_runner)
     new_ac.observe('pprz_mode__ap_mode', flight_plan_runner)
+    new_ac.observe('flight_param', flight_plan_runner)
     new_ac.observe('flight_param', RecordFlight(new_ac))
 
     return new_ac
