@@ -2,13 +2,15 @@ import sys
 
 from flight_plan import PlanItemWaitForState, PlanItemAnd, PlanItemJumpToState, \
     PlanItemWaitForCircles, FlightPlanPerformingObserver
-from flight_plan_generator import move_waypoints, WaypointLocation, takeoff_and_launch, wait_for_mode_2
+from flight_plan_generator import move_waypoints, WaypointLocation, takeoff_and_launch, wait_for_mode_2, \
+    VALID_RANGE_LAT, VALID_RANGE_LON
 from observer import Observer
 
 sys.path.append("../pprzlink/lib/v1.0/python")
 import logging
 from typing import Dict
 import datetime
+import random
 
 import pandas as pd
 import os
@@ -55,7 +57,7 @@ class RecordFlight(Observer):
         for k in self.history.keys() & msg_dict.keys():
             self.history[k].append(msg_dict[k])
         self.history['throttle'].append(self.ac.params.engine_status__throttle)
-        if self.ac.id == 14:   # Microjet
+        if self.ac.id == 14:  # Microjet
             _, roll, pitch, _ = self.ac.params.commands__values  # throttle, roll, pitch, shutter
             yaw = 0
         elif self.ac.id == 2:  # Bixler
@@ -106,9 +108,18 @@ def create_aircraft(ac_id, kwargs):
         **kwargs
     )
 
+    oval_alt = random.uniform(250, 300)
+    survey_alt = random.uniform(250, 300)
+    def get_rand_lat(): return random.uniform(*VALID_RANGE_LAT)
+    def get_rand_lon(): return random.uniform(*VALID_RANGE_LON)
+
     set_up = wait_for_mode_2 + takeoff_and_launch + move_waypoints({
-        3: WaypointLocation(lat=43.4659053, long=1.2700005, alt=300),
-        4: WaypointLocation(lat=43.4654170, long=1.2799074, alt=300),
+        # 3: WaypointLocation(lat=43.4659053, long=1.2700005, alt=300),
+        # 4: WaypointLocation(lat=43.4654170, long=1.2799074, alt=300),
+        3: WaypointLocation(lat=get_rand_lat(), long=get_rand_lon(), alt=oval_alt),  # 1
+        4: WaypointLocation(lat=get_rand_lat(), long=get_rand_lon(), alt=oval_alt),  # 2
+        6: WaypointLocation(lat=get_rand_lat(), long=get_rand_lon(), alt=survey_alt),  # S1
+        7: WaypointLocation(lat=get_rand_lat(), long=get_rand_lon(), alt=survey_alt),  # S2
     }) + [
         PlanItemAnd(
             PlanItemWaitForState(state_name_or_id='Standby', actor=lambda *_: None),

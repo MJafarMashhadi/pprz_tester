@@ -12,6 +12,9 @@ logger.addHandler(logging.StreamHandler())
 
 WaypointLocation = namedtuple('WaypointLocation', 'lat long alt')
 
+VALID_RANGE_LAT = [43.4598, 43.4675]
+VALID_RANGE_LON = [ 1.2654,  1.2813]
+
 wait_for_mode_2 = [
     PlanItem(
         matcher=lambda _, property_name, __, new_value: property_name == 'pprz_mode__ap_mode' and new_value == 2,
