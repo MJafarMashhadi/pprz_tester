@@ -1,7 +1,8 @@
-from typing import List
 import logging
+from typing import List
 
 from observer import Observer
+
 logger = logging.getLogger('pprz_tester')
 logger.setLevel(logging.INFO)
 logger.handlers.clear()
@@ -128,7 +129,13 @@ class PlanItemSendMessage(PlanItem):
     def __init__(self, message_builder, *args, **kwargs):
         super(PlanItemSendMessage, self).__init__(*args, **kwargs)
         if not callable(message_builder):
-            self.message_builder = lambda *_: message_builder
+            def create_message_builder_callable(message_builder):
+                def _inner(*_):
+                    return message_builder
+
+                return _inner
+
+            self.message_builder = create_message_builder_callable(message_builder)
         else:
             self.message_builder = message_builder
 

@@ -26,11 +26,15 @@ takeoff_and_launch = [
 
 
 def move_waypoints(waypoint_data: Dict[Union[str, int], WaypointLocation]):
-    return [PlanItemSendMessage(lambda ac, *_: MessageBuilder('ground', 'MOVE_WAYPOINT')
-                                .p('ac_id', ac.id)
-                                .p('alt', info.alt)
-                                .p('wp_id', str(wpid))
-                                .p('lat', info.lat)
-                                .p('long', info.long)
-                                .build())
-            for wpid, info in waypoint_data.items()]
+    def create_message_callable(wpid, info):
+        def _inner(ac, *_):
+            return MessageBuilder('ground', 'MOVE_WAYPOINT') \
+                .p('ac_id', ac.id) \
+                .p('alt', info.alt) \
+                .p('wp_id', str(wpid)) \
+                .p('lat', info.lat) \
+                .p('long', info.long) \
+                .build()
+        return _inner
+
+    return [PlanItemSendMessage(create_message_callable(wpid, info)) for wpid, info in waypoint_data.items()]
