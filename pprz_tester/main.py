@@ -1,6 +1,7 @@
 import sys
 
-from flight_plan import PlanItem, PlanItemSendMessage, PlanItemWaitForState
+from flight_plan import PlanItem, PlanItemSendMessage, PlanItemWaitForState, PlanItemAnd, PlanItemJumpToState, \
+    PlanItemWaitForCircles, FlightPlanPerformingObserver
 from observer import Observer
 from pprzlink_enhancements import MessageBuilder
 
@@ -30,62 +31,6 @@ ivy = pl.ivy.IvyMessagesInterface(
 )
 
 aircraft_list: Dict[int, aircraft.Aircraft] = dict()
-
-
-class FlightPlanPerformingObserver(Observer):
-    def __init__(self, ac, plan_items=list()):
-        super(FlightPlanPerformingObserver, self).__init__(ac)
-        self._plan: List[PlanItem] = list(plan_items)
-
-    @property
-    def plan(self):
-        return self._plan
-
-    def notify(self, property_name, old_value, new_value):
-        while self._plan:
-            next_item = self._plan[0]
-            if not next_item.match(self.ac, property_name, old_value, new_value):
-                break
-
-            act_successful = False
-            try:
-                act_successful = next_item.act(self.ac, property_name, old_value, new_value)
-            except:
-                act_successful = False
-                import traceback
-                traceback.print_exc()
-            finally:
-                if act_successful is None or act_successful:
-                    plan_item = self._plan.pop(0)
-                    logger.info(f'Performed a flight plan item, {plan_item}, remaining items={len(self._plan)}')
-                else:
-                    logger.error(f'Failed to perform a flight plan item, keeping the item on the queue.')
-                    break
-
-
-class CurrentBlockChanged(Observer):
-    def notify(self, property_name, old_value, new_value):
-        block_name = self.ac.find_block_name(new_value)
-        logger.info(f'Aircraft {self.ac.id} in block {new_value}: {block_name}')
-        if block_name == 'Takeoff':
-            self.ac.commands.launch()
-
-
-
-class CircleCountChanged(Observer):
-    def notify(self, property_name, old_value, new_value):
-        logger.info(f'Aircraft {self.ac.id} circle count changed to {new_value}')
-        if self.ac.params.navigation__cur_block == self.ac.flight_plan_blocks['Standby'] and new_value >= 1:
-            # End of circle
-            self.ac.commands.jump_to_block('Oval 1-2')
-
-
-class AltitudeChanged(Observer):
-    def notify(self, property_name, old_value, new_value):
-        if old_value is not None and abs(old_value - new_value) < 0.5:
-            # Not large enough, just ignore.
-            return
-        logger.info(f'Aircraft {self.ac.id} changed altitude to {new_value}m')
 
 
 class RecordFlight(Observer):
@@ -160,10 +105,6 @@ def create_aircraft(ac_id, kwargs):
         ac_id=ac_id,
         **kwargs
     )
-    # new_ac.observe('navigation__cur_block', CurrentBlockChanged(new_ac))
-    # new_ac.observe('navigation__circle_count', CircleCountChanged(new_ac))
-    new_ac.observe('flight_param__alt', AltitudeChanged(new_ac))
-    new_ac.observe('flight_param', RecordFlight(new_ac))
 
     flight_plan_runner = FlightPlanPerformingObserver(new_ac, [
         PlanItem(
@@ -179,12 +120,17 @@ def create_aircraft(ac_id, kwargs):
                             .p('wp_id', 4).p('lat', 43.4654170).p('long', 1.2799074)
                             .build()),
         PlanItem(actor=lambda ac, *_: ac.commands.takeoff()),
-        PlanItemWaitForState(state_name_or_id='Takeoff', actor=lambda ac, *_: ac.commands.launch())
-        # PlanItemWaitForState(state_name_or_id='')
+        PlanItemWaitForState(state_name_or_id='Takeoff', actor=lambda ac, *_: ac.commands.launch()),
+        PlanItemAnd(
+            PlanItemWaitForState(state_name_or_id='Standby'),
+            PlanItemWaitForCircles(n_circles=1)
+        ),
+        PlanItemJumpToState(state_id_or_name='Oval 1-2'),
     ])
     new_ac.observe('navigation__cur_block', flight_plan_runner)
     new_ac.observe('navigation__circle_count', flight_plan_runner)
     new_ac.observe('pprz_mode__ap_mode', flight_plan_runner)
+    new_ac.observe('flight_param', RecordFlight(new_ac))
 
     return new_ac
 
