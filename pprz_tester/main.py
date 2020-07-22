@@ -1,6 +1,6 @@
 import sys
 
-from flight_plan import PlanItemWaitForState, PlanItemAnd, PlanItemJumpToState, \
+from flight_plan import PlanItemWaitForState, PlanItemAll, PlanItemJumpToState, \
     FlightPlanPerformingObserver, PlanItemWaitClimb
 from flight_plan_generator import move_waypoints, WaypointLocation, takeoff_and_launch, wait_for_mode_2, \
     VALID_RANGE_LAT, VALID_RANGE_LON
@@ -58,9 +58,9 @@ def create_aircraft(ac_id, kwargs):
         6: WaypointLocation(lat=get_rand_lat(), long=get_rand_lon(), alt=survey_alt),  # S1
         7: WaypointLocation(lat=get_rand_lat(), long=get_rand_lon(), alt=survey_alt),  # S2
     }) + [
-        PlanItemAnd(
-            PlanItemWaitForState(state_name_or_id='Standby', actor=lambda *_: None),
-            # PlanItemWaitForCircles(n_circles=1, actor=lambda *_: None),
+        PlanItemAll(
+            PlanItemWaitForState(state_name_or_id='Standby'),
+            # PlanItemWaitForCircles(n_circles=1),
             PlanItemWaitClimb(tolerance=5),
         ),
     ]

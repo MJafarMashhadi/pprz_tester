@@ -28,9 +28,9 @@ class PlanItem:
         return True
 
 
-class PlanItemOr(PlanItem):
+class PlanItemAny(PlanItem):
     def __init__(self, *items, **kwargs):
-        super(PlanItemOr, self).__init__(**kwargs)
+        super(PlanItemAny, self).__init__(**kwargs)
         self.matching_item = None
         self.items = items
 
@@ -52,22 +52,22 @@ class PlanItemOr(PlanItem):
         return '<Flight plan combo:' + ' | '.join(str(item) for item in self.items) + '>'
 
 
-class PlanItemAnd(PlanItem):
+class PlanItemAll(PlanItem):
     def __init__(self, *items, **kwargs):
-        super(PlanItemAnd, self).__init__(**kwargs)
+        super(PlanItemAll, self).__init__(**kwargs)
         self.all_items = items
-        self.items = list(items)
+        self.remaining_items = list(items)
 
     def match(self, *args, **kwargs):
         fulfilled = list()
-        for idx, item in enumerate(self.items):
+        for idx, item in enumerate(self.remaining_items):
             if item.match(*args, **kwargs):
                 fulfilled.append(idx)
 
         for idx in reversed(fulfilled):
-            self.items.pop(idx)
+            self.remaining_items.pop(idx)
 
-        return len(self.items) == 0
+        return len(self.remaining_items) == 0
 
     def act(self, *args, **kwargs):
         success = True
