@@ -1,13 +1,13 @@
 import sys
 
-from flight_plan import PlanItem, PlanItemSendMessage, PlanItemWaitForState, PlanItemAnd, PlanItemJumpToState, \
+from flight_plan import PlanItemWaitForState, PlanItemAnd, PlanItemJumpToState, \
     PlanItemWaitForCircles, FlightPlanPerformingObserver
+from flight_plan_generator import move_waypoints, WaypointLocation, takeoff_and_launch, wait_for_mode_2
 from observer import Observer
-from pprzlink_enhancements import MessageBuilder
 
 sys.path.append("../pprzlink/lib/v1.0/python")
 import logging
-from typing import Dict, List
+from typing import Dict
 import datetime
 
 import pandas as pd
@@ -106,25 +106,17 @@ def create_aircraft(ac_id, kwargs):
         **kwargs
     )
 
-    flight_plan_runner = FlightPlanPerformingObserver(new_ac, [
-        PlanItem(
-            matcher=lambda _, property_name, __, new_value: property_name == 'pprz_mode__ap_mode' and new_value == 2,
-            actor=lambda ac, *_: logger.info(f'Aircraft {ac.id} Mode = AUTO2, ready')
-        ),
-        PlanItemSendMessage(lambda ac, *_: MessageBuilder('ground', 'MOVE_WAYPOINT')
-                            .p('ac_id', ac.id).p('alt', 300)
-                            .p('wp_id', 3).p('lat', 43.4659053).p('long', 1.2700005)
-                            .build()),
-        PlanItemSendMessage(lambda ac, *_: MessageBuilder('ground', 'MOVE_WAYPOINT')
-                            .p('ac_id', ac.id).p('alt', 300)
-                            .p('wp_id', 4).p('lat', 43.4654170).p('long', 1.2799074)
-                            .build()),
-        PlanItem(actor=lambda ac, *_: ac.commands.takeoff()),
-        PlanItemWaitForState(state_name_or_id='Takeoff', actor=lambda ac, *_: ac.commands.launch()),
+    set_up = wait_for_mode_2 + takeoff_and_launch + move_waypoints({
+        3: WaypointLocation(lat=43.4659053, long=1.2700005, alt=300),
+        4: WaypointLocation(lat=43.4654170, long=1.2799074, alt=300),
+    }) + [
         PlanItemAnd(
-            PlanItemWaitForState(state_name_or_id='Standby'),
-            PlanItemWaitForCircles(n_circles=1)
+            PlanItemWaitForState(state_name_or_id='Standby', actor=lambda *_: None),
+            PlanItemWaitForCircles(n_circles=1, actor=lambda *_: None),
         ),
+    ]
+
+    flight_plan_runner = FlightPlanPerformingObserver(new_ac, set_up + [
         PlanItemJumpToState(state_id_or_name='Oval 1-2'),
     ])
     new_ac.observe('navigation__cur_block', flight_plan_runner)
