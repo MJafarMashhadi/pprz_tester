@@ -1,11 +1,12 @@
 import sys
 
+from flight_plan import PlanItem, PlanItemSendMessage, PlanItemWaitForState
 from observer import Observer
 from pprzlink_enhancements import MessageBuilder
 
 sys.path.append("../pprzlink/lib/v1.0/python")
 import logging
-from typing import Dict
+from typing import Dict, List
 import datetime
 
 import pandas as pd
@@ -31,6 +32,37 @@ ivy = pl.ivy.IvyMessagesInterface(
 aircraft_list: Dict[int, aircraft.Aircraft] = dict()
 
 
+class FlightPlanPerformingObserver(Observer):
+    def __init__(self, ac, plan_items=list()):
+        super(FlightPlanPerformingObserver, self).__init__(ac)
+        self._plan: List[PlanItem] = list(plan_items)
+
+    @property
+    def plan(self):
+        return self._plan
+
+    def notify(self, property_name, old_value, new_value):
+        while self._plan:
+            next_item = self._plan[0]
+            if not next_item.match(self.ac, property_name, old_value, new_value):
+                break
+
+            act_successful = False
+            try:
+                act_successful = next_item.act(self.ac, property_name, old_value, new_value)
+            except:
+                act_successful = False
+                import traceback
+                traceback.print_exc()
+            finally:
+                if act_successful is None or act_successful:
+                    plan_item = self._plan.pop(0)
+                    logger.info(f'Performed a flight plan item, {plan_item}, remaining items={len(self._plan)}')
+                else:
+                    logger.error(f'Failed to perform a flight plan item, keeping the item on the queue.')
+                    break
+
+
 class CurrentBlockChanged(Observer):
     def notify(self, property_name, old_value, new_value):
         block_name = self.ac.find_block_name(new_value)
@@ -38,17 +70,6 @@ class CurrentBlockChanged(Observer):
         if block_name == 'Takeoff':
             self.ac.commands.launch()
 
-
-class APModeChanged(Observer):
-    def notify(self, property_name, old_value, new_value):
-        logger.debug(f'{self.ac.id} changed mode to {new_value}')
-        if self.ac.params.pprz_mode__ap_mode == 2:  # AUTO1 or AUTO2
-            logger.info(f'Aircraft {self.ac.id} Mode = AUTO2, ready')
-            self.ac.commands.takeoff()
-            ivy.send(MessageBuilder('ground', 'MOVE_WAYPOINT').p('ac_id', self.ac.id).p('alt', 300)
-                     .p('wp_id', 3).p('lat', 43.4659053).p('long', 1.2700005).build())
-            ivy.send(MessageBuilder('ground', 'MOVE_WAYPOINT').p('ac_id', self.ac.id).p('alt', 300)
-                     .p('wp_id', 4).p('lat', 43.4654170).p('long', 1.2799074).build())
 
 
 class CircleCountChanged(Observer):
@@ -139,11 +160,32 @@ def create_aircraft(ac_id, kwargs):
         ac_id=ac_id,
         **kwargs
     )
-    new_ac.observe('navigation__cur_block', CurrentBlockChanged(new_ac))
-    new_ac.observe('navigation__circle_count', CircleCountChanged(new_ac))
-    new_ac.observe('pprz_mode__ap_mode', APModeChanged(new_ac))
+    # new_ac.observe('navigation__cur_block', CurrentBlockChanged(new_ac))
+    # new_ac.observe('navigation__circle_count', CircleCountChanged(new_ac))
     new_ac.observe('flight_param__alt', AltitudeChanged(new_ac))
     new_ac.observe('flight_param', RecordFlight(new_ac))
+
+    flight_plan_runner = FlightPlanPerformingObserver(new_ac, [
+        PlanItem(
+            matcher=lambda _, property_name, __, new_value: property_name == 'pprz_mode__ap_mode' and new_value == 2,
+            actor=lambda ac, *_: logger.info(f'Aircraft {ac.id} Mode = AUTO2, ready')
+        ),
+        PlanItemSendMessage(lambda ac, *_: MessageBuilder('ground', 'MOVE_WAYPOINT')
+                            .p('ac_id', ac.id).p('alt', 300)
+                            .p('wp_id', 3).p('lat', 43.4659053).p('long', 1.2700005)
+                            .build()),
+        PlanItemSendMessage(lambda ac, *_: MessageBuilder('ground', 'MOVE_WAYPOINT')
+                            .p('ac_id', ac.id).p('alt', 300)
+                            .p('wp_id', 4).p('lat', 43.4654170).p('long', 1.2799074)
+                            .build()),
+        PlanItem(actor=lambda ac, *_: ac.commands.takeoff()),
+        PlanItemWaitForState(state_name_or_id='Takeoff', actor=lambda ac, *_: ac.commands.launch())
+        # PlanItemWaitForState(state_name_or_id='')
+    ])
+    new_ac.observe('navigation__cur_block', flight_plan_runner)
+    new_ac.observe('navigation__circle_count', flight_plan_runner)
+    new_ac.observe('pprz_mode__ap_mode', flight_plan_runner)
+
     return new_ac
 
 
