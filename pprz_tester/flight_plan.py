@@ -48,18 +48,23 @@ class PlanItemOr(PlanItem):
 class PlanItemAnd(PlanItem):
     def __init__(self, *items, **kwargs):
         super(PlanItemAnd, self).__init__(**kwargs)
-        self.items = items
+        self.all_items = items
+        self.items = list(items)
 
     def match(self, *args, **kwargs):
+        fulfilled = list()
         for idx, item in enumerate(self.items):
-            if not item.match(*args, **kwargs):
-                return False
+            if item.match(*args, **kwargs):
+                fulfilled.append(idx)
 
-        return True
+        for idx in reversed(fulfilled):
+            self.items.pop(idx)
+
+        return len(self.items) == 0
 
     def act(self, *args, **kwargs):
         success = True
-        for item in self.items:
+        for item in self.all_items:
             res = item.act(*args, **kwargs)
             if res is not None and not res:
                 success = False
