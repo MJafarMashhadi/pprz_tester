@@ -81,7 +81,7 @@ class Aircraft(object):
         for cb in self._observers[name]:
             try:
                 cb(property_name=name, old_value=old_value, new_value=new_value)
-            except Exception as e:
+            except Exception:
                 logger.error(f'Exception while notifying an observer of {name}')
                 import traceback
                 traceback.print_exc()
