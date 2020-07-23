@@ -1,10 +1,13 @@
+import logging
 import os
 
 import pandas as pd
 
 import pprzlink as pl
-from main import start_time, logger
 from observer import Observer
+
+logger = logging.getLogger('pprz_tester')
+start_time = ''
 
 
 class RecordFlight(Observer):
