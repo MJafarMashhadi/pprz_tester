@@ -46,7 +46,7 @@ parser.add_argument('-w', '--wp-location', nargs=4, action='append')
 parser.add_argument('-b', '--build', action='store_true', default=False)
 parser.add_argument('--gcs', action='store_true', default=False)
 parser.add_argument('--no-sim', action='store_true', default=False)
-parser.add_argument('airframe', choices=['bixler', 'Microjet'])
+parser.add_argument('airframe', choices=['Bixler', 'Microjet'])
 args = parser.parse_args()
 
 # Apply arguments
@@ -98,7 +98,7 @@ def run_gcs():
 
 
 def run_server():
-    command = [str((Path(paparazzi_home) / Path('sw/ground_segment/tmtc/server')).resolve())]
+    command = [str((Path(paparazzi_home) / Path('sw/ground_segment/tmtc/server')).resolve()), "-no_md5_check"]
     _server = subprocess.Popen(command, env={
         'PAPARAZZI_HOME': paparazzi_home,
         'PAPARAZZI_SRC': paparazzi_home,
