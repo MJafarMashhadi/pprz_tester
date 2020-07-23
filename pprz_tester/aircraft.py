@@ -61,7 +61,7 @@ class Aircraft(object):
 
         self._ac = AircraftCommands(self)
         # TODO: find a better way to use the decorator instead of patching like this. It defeats the purpose.
-        IvySubscribe(ivy_link=self._ivy, message_types=[
+        self.set_values_callback = IvySubscribe(ivy_link=self._ivy, message_types=[
             ("telemetry", "PPRZ_MODE"),
             ("telemetry", "NAVIGATION"),
             ("telemetry", "COMMANDS"),
@@ -166,6 +166,10 @@ class Aircraft(object):
             old_value=None,
             new_value=msg
         )
+
+    def __del__(self):
+        self._observers.clear()
+        self.set_values_callback.__ivy_subs__.unsubscribe()
 
 
 class AircraftCommands(object):
