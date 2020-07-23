@@ -179,6 +179,16 @@ class PlanItemWaitClimb(PlanItem):
         return f'<Flight plan item: wait until altitude stabilizes, tolerance={self.tolerance}m>'
 
 
+class PlanItemStopTest(PlanItem):
+    def act(self, ac, property_name, old_value, new_value):
+        import os
+        import signal
+        os.kill(os.getpid(), signal.SIGINT)
+
+    def __str__(self):
+        return '<Flight plan item: stop test>'
+
+
 class FlightPlanPerformingObserver(Observer):
     def __init__(self, ac, plan_items=list()):
         super(FlightPlanPerformingObserver, self).__init__(ac)
