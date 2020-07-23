@@ -37,6 +37,8 @@ parser.add_argument('--agent-name', nargs=1, default="MJafarIvyAgent",
                     help="The unique name to use when communicating on Ivy bus")
 parser.add_argument('-l', '--log', nargs=1, default="logs",
                     help="Log file directory")
+parser.add_argument('--log-format', nargs=1, default="csv", choices=['csv', 'hd5'],
+                    help="The format to store and compress logs in")
 parser.add_argument('--prep-mode', nargs='*', choices=['circle', 'climb'],
                     help="The required conditions before starting the flight scenario")
 parser.add_argument('--fuzz-wps', nargs='*', default=[wp_name(_) for _ in ('1', '2', 'S1', 'S2')],
@@ -181,6 +183,7 @@ def stop_procedure(*_):
 
 flight_recorder.start_time = datetime.now().strftime("%m%d-%H%M%S")
 flight_recorder.log_dir = Path.cwd() / Path(args.log)
+flight_recorder.log_format = args.log_format[0]
 aircraft_manager = aircraft_manager.AircraftManager(agent_name=args.agent_name, start_ivy=False)
 aircraft_manager.waypoints = wp_locs
 aircraft_manager.prep_mode = list(set(args.prep_mode or {'climb'}))

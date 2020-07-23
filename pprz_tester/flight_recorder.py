@@ -9,6 +9,7 @@ from observer import Observer
 logger = logging.getLogger('pprz_tester')
 start_time = ''
 log_dir = Path.cwd() / 'logs'
+log_format = 'csv'
 
 
 class RecordFlight(Observer):
@@ -54,10 +55,16 @@ class RecordFlight(Observer):
         log_file_name = f'{self.ac.name}_{start_time}'
         log_file_addr = (log_dir / log_file_name).resolve()
         log_file_addr = str(log_file_addr)
-
-        logger.debug(f"Saving aircraft telemetry logs to {log_file_addr}")
-        # self.history_df.to_hdf(log_file_addr + '.hd5', f'ac_{self.ac.id}')
-        self.history_df.to_csv(log_file_addr + '.csv')
+        if log_format == 'csv':
+            log_file_addr += '.csv'
+            logger.debug(f"Saving aircraft telemetry logs to {log_file_addr}")
+            self.history_df.to_csv(log_file_addr)
+        elif log_format == 'hd5':
+            log_file_addr += '.hd5'
+            logger.debug(f"Saving aircraft telemetry logs to {log_file_addr}")
+            self.history_df.to_hdf(log_file_addr, f'ac_{self.ac.id}', complevel=5)
+        else:
+            raise ValueError(f"Unrecognised log format {log_format}")
 
     @property
     def history_df(self):  # Not thread safe
