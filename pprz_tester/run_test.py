@@ -45,6 +45,7 @@ parser.add_argument('-p', '--paparazzi-home', nargs=1)
 parser.add_argument('-w', '--wp-location', nargs=4, action='append')
 parser.add_argument('-b', '--build', action='store_true', default=False)
 parser.add_argument('--gcs', action='store_true', default=False)
+parser.add_argument('--no-sim', action='store_true', default=False)
 parser.add_argument('airframe', choices=['bixler', 'Microjet'])
 args = parser.parse_args()
 
@@ -130,13 +131,14 @@ def run_sim():
 if args.build:
     build()
 
-gcs = None
+gcs, dl, server, sim = None, None, None, None
 if args.gcs:
     gcs = run_gcs()
 
 dl = run_datalink()
 server = run_server()
-sim = run_sim()
+if not args.no_sim:
+    sim = run_sim()
 
 
 def stop_procedure(*_):
