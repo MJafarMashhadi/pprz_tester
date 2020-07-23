@@ -14,8 +14,8 @@ import random
 
 import pprzlink as pl
 
-from pprz_tester.pprzlink_enhancements import IvySubscribe
-from pprz_tester import aircraft
+from pprzlink_enhancements import IvySubscribe
+import aircraft
 
 logger = logging.getLogger('pprz_tester')
 logger.setLevel(logging.INFO)

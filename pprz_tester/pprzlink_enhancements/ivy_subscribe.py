@@ -1,9 +1,9 @@
+import inspect
 import logging
 from typing import List, Tuple, Optional, Union
-import inspect
 
 from pprzlink.ivy import IvyMessagesInterface
-from pprz_tester.pprzlink_enhancements.message import MessageBuilder
+from pprzlink_enhancements.message import MessageBuilder
 
 logger = logging.getLogger('pprz_tester')
 
