@@ -1,5 +1,5 @@
 import logging
-import os
+from pathlib import Path
 
 import pandas as pd
 
@@ -8,6 +8,7 @@ from observer import Observer
 
 logger = logging.getLogger('pprz_tester')
 start_time = ''
+log_dir = Path.cwd() / 'logs'
 
 
 class RecordFlight(Observer):
@@ -51,7 +52,8 @@ class RecordFlight(Observer):
 
     def _save_history(self):
         log_file_name = f'{self.ac.name}_{start_time}'
-        log_file_addr = os.path.join("..", "logs", log_file_name)
+        log_file_addr = (log_dir / log_file_name).resolve()
+        log_file_addr = str(log_file_addr)
 
         logger.debug(f"Saving aircraft telemetry logs to {log_file_addr}")
         # self.history_df.to_hdf(log_file_addr + '.hd5', f'ac_{self.ac.id}')
