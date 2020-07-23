@@ -68,7 +68,7 @@ An example of passing parameters:
 
     PlanItem(actor=lambda ac, *_: ac.commands.takeoff())
 
-and a simple example of subclassing `PlanItem` can be seen in `PlanItemWaitForCircles` class. 
+and a simple example of subclassing `PlanItem` can be seen in `WaitForCircles` class. 
 
 The flight plan always starts with a certain sequence of items. First, it waits for autopilot mode `AUTO 2` to activate, 
 it happens after the AP is boot up and ready. Immediately after, it sends a take off command and waits for the take off

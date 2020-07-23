@@ -3,7 +3,7 @@ import random
 from collections import namedtuple
 from typing import Dict, Union
 
-from flight_plan import PlanItemSendMessage, PlanItemWaitForState, PlanItem
+import flight_plan
 from pprzlink_enhancements import MessageBuilder
 
 logger = logging.getLogger('pprz_tester')
@@ -21,15 +21,15 @@ def get_rand_lon(): return random.uniform(*VALID_RANGE_LON)
 
 
 wait_for_mode_2 = [
-    PlanItem(
+    flight_plan.PlanItem(
         matcher=lambda _, property_name, __, new_value: property_name == 'pprz_mode__ap_mode' and new_value == 2,
         actor=lambda ac, *_: logger.info(f'Aircraft {ac.id} Mode = AUTO2, ready')
     )
 ]
 
 takeoff_and_launch = [
-    PlanItem(actor=lambda ac, *_: ac.commands.takeoff()),
-    PlanItemWaitForState(state_name_or_id='Takeoff', actor=lambda ac, *_: ac.commands.launch()),
+    flight_plan.PlanItem(actor=lambda ac, *_: ac.commands.takeoff()),
+    flight_plan.WaitForState(state_name_or_id='Takeoff', actor=lambda ac, *_: ac.commands.launch()),
 ]
 
 
@@ -45,6 +45,6 @@ def move_waypoints(waypoint_data: Dict[Union[str, int], WaypointLocation]):
                 .build()
         return _inner
 
-    return [PlanItemSendMessage(create_message_callable(wpid, info)) for wpid, info in waypoint_data.items()]
+    return [flight_plan.SendMessage(create_message_callable(wpid, info)) for wpid, info in waypoint_data.items()]
 
 

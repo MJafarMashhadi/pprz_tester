@@ -72,12 +72,12 @@ class AircraftManager:
             # 3: WaypointLocation(lat=43.4659053, long=1.2700005, alt=300),
             # 4: WaypointLocation(lat=43.4654170, long=1.2799074, alt=300),
 
-        prep_list = [flight_plan.PlanItemWaitForState(state_name_or_id='Standby')]
+        prep_list = [flight_plan.WaitForState(state_name_or_id='Standby')]
         if 'circle' in self.prep_mode:
-            prep_list.append(flight_plan.PlanItemWaitForCircles(n_circles=1))
+            prep_list.append(flight_plan.WaitForCircles(n_circles=1))
         if 'climb' in self.prep_mode:
-            prep_list.append(flight_plan.PlanItemWaitClimb(tolerance=5))
-        set_up.append(flight_plan.PlanItemAll(*prep_list))
+            prep_list.append(flight_plan.WaitClimb(tolerance=5))
+        set_up.append(flight_plan.WaitAll(*prep_list))
 
         flight_plan_runner = flight_plan.FlightPlanPerformingObserver(new_ac, set_up + self.load_plan(new_ac))
         new_ac.observe('navigation__cur_block', flight_plan_runner)

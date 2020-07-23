@@ -25,9 +25,9 @@ class PlanItem:
         return True
 
 
-class PlanItemAny(PlanItem):
+class WaitAny(PlanItem):
     def __init__(self, *items, **kwargs):
-        super(PlanItemAny, self).__init__(**kwargs)
+        super(WaitAny, self).__init__(**kwargs)
         self.matching_item = None
         self.items = items
 
@@ -49,9 +49,9 @@ class PlanItemAny(PlanItem):
         return '<Flight plan combo:' + ' | '.join(str(item) for item in self.items) + '>'
 
 
-class PlanItemAll(PlanItem):
+class WaitAll(PlanItem):
     def __init__(self, *items, **kwargs):
-        super(PlanItemAll, self).__init__(**kwargs)
+        super(WaitAll, self).__init__(**kwargs)
         self.all_items = items
         self.remaining_items = list(items)
 
@@ -79,9 +79,9 @@ class PlanItemAll(PlanItem):
         return '<Flight plan combo:' + ' & '.join(str(item) for item in self.all_items) + '>'
 
 
-class PlanItemWaitForState(PlanItem):
+class WaitForState(PlanItem):
     def __init__(self, state_name_or_id, *args, **kwargs):
-        super(PlanItemWaitForState, self).__init__(*args, **kwargs)
+        super(WaitForState, self).__init__(*args, **kwargs)
         self.state_name_or_id = state_name_or_id
 
     def match(self, ac, property_name, old_value, new_value):
@@ -104,9 +104,9 @@ class PlanItemWaitForState(PlanItem):
         return f'<Flight plan item: wait for state {self.state_name_or_id}>'
 
 
-class PlanItemJumpToBlock(PlanItem):
+class JumpToBlock(PlanItem):
     def __init__(self, state_id_or_name, *args, **kwargs):
-        super(PlanItemJumpToBlock, self).__init__(*args, **kwargs)
+        super(JumpToBlock, self).__init__(*args, **kwargs)
         self.state_name_or_id = state_id_or_name
 
     def act(self, ac, property_name, old_value, new_value):
@@ -116,9 +116,9 @@ class PlanItemJumpToBlock(PlanItem):
         return f'<Flight plan item: go to state {self.state_name_or_id}>'
 
 
-class PlanItemSendMessage(PlanItem):
+class SendMessage(PlanItem):
     def __init__(self, message_builder, *args, **kwargs):
-        super(PlanItemSendMessage, self).__init__(*args, **kwargs)
+        super(SendMessage, self).__init__(*args, **kwargs)
         if not callable(message_builder):
             def create_message_builder_callable(message_builder):
                 def _inner(*_):
@@ -138,9 +138,9 @@ class PlanItemSendMessage(PlanItem):
         return f'<Flight plan item: send ivy message>'
 
 
-class PlanItemWaitForCircles(PlanItem):
+class WaitForCircles(PlanItem):
     def __init__(self, n_circles=0, *args, **kwargs):
-        super(PlanItemWaitForCircles, self).__init__(*args, **kwargs)
+        super(WaitForCircles, self).__init__(*args, **kwargs)
         self.n_circles = n_circles
 
     def match(self, ac, property_name, old_value, new_value):
@@ -157,9 +157,9 @@ class PlanItemWaitForCircles(PlanItem):
         return f'<Flight plan item: wait for {self.n_circles} circles>'
 
 
-class PlanItemWaitClimb(PlanItem):
+class WaitClimb(PlanItem):
     def __init__(self, tolerance=5, *args, **kwargs):
-        super(PlanItemWaitClimb, self).__init__(*args, **kwargs)
+        super(WaitClimb, self).__init__(*args, **kwargs)
         self.tolerance = tolerance
         self.last_value = None
 
@@ -179,7 +179,7 @@ class PlanItemWaitClimb(PlanItem):
         return f'<Flight plan item: wait until altitude stabilizes, tolerance={self.tolerance}m>'
 
 
-class PlanItemStopTest(PlanItem):
+class StopTest(PlanItem):
     def act(self, ac, property_name, old_value, new_value):
         import os
         import signal

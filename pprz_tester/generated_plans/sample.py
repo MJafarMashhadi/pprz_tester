@@ -6,17 +6,17 @@ class Example(PlanBase):
     def get_items(self, **kwargs):
         if self.ac.name == 'Microjet':
             plan = [
-                flight_plan.PlanItemJumpToBlock('Survey S1-S2'),
-                flight_plan.PlanItemWaitForCircles(n_circles=2),
+                flight_plan.JumpToBlock('Survey S1-S2'),
+                flight_plan.WaitForCircles(n_circles=2),
             ]
         elif self.ac.name == 'Bixler':
             plan = [
-                flight_plan.PlanItemJumpToBlock('Fly in Square'),
-                flight_plan.PlanItemWaitForCircles(n_circles=2),
+                flight_plan.JumpToBlock('Fly in Square'),
+                flight_plan.WaitForCircles(n_circles=2),
             ]
         else:
             plan = []
-        plan.append(flight_plan.PlanItemStopTest())
+        plan.append(flight_plan.StopTest())
         return plan
 
 
