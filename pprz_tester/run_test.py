@@ -66,6 +66,10 @@ parser.add_argument('--no-sim', action='store_true', default=False,
                     help="Does not launch the simulator")
 parser.add_argument('airframe', choices=['Bixler', 'Microjet'],
                     help="The aircraft to simulate")
+parser.add_argument('plan',
+                    help="Plan name to run. Format: <plan_name>[<arg1>=<val1>,<arg2>=<val2>,...]. Arguments are "
+                         "optional. If provided, they will be passed to get_items as keyword arguments. They need "
+                         "to be enclosed in square brackets.")
 args = parser.parse_args()
 
 # Apply arguments
@@ -184,9 +188,12 @@ def stop_procedure(*_):
 flight_recorder.start_time = datetime.now().strftime("%m%d-%H%M%S")
 flight_recorder.log_dir = Path.cwd() / Path(args.log)
 flight_recorder.log_format = args.log_format[0]
-aircraft_manager = aircraft_manager.AircraftManager(agent_name=args.agent_name, start_ivy=False)
-aircraft_manager.waypoints = wp_locs
-aircraft_manager.prep_mode = list(set(args.prep_mode or {'climb'}))
-aircraft_manager.start()
+aircraft_manager = aircraft_manager.AircraftManager(
+    agent_name=args.agent_name,
+    start_ivy=True,
+    waypoints=wp_locs,
+    prep_mode=list(set(args.prep_mode or {'climb'})),
+    plan=args.plan
+)
 
 signal.signal(signal.SIGINT, stop_procedure)
