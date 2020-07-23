@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.append(str(Path("../pprzlink/lib/v1.0/python").resolve()))
 import flight_plan_generator
 import flight_recorder
-import main
+import aircraft_manager
 
 # Set up logging
 logger = logging.getLogger('pprz_tester')
@@ -164,7 +164,7 @@ def stop_procedure(*_):
 
 flight_recorder.start_time = datetime.now().strftime("%m%d-%H%M%S")
 flight_recorder.log_dir = Path.cwd() / Path(args.log)
-aircraft_manager = main.AircraftManager(agent_name=args.agent_name, start_ivy=False)
+aircraft_manager = aircraft_manager.AircraftManager(agent_name=args.agent_name, start_ivy=False)
 aircraft_manager.waypoints = wp_locs
 aircraft_manager.prep_mode = list(set(args.prep_mode or {'climb'}))
 aircraft_manager.start()
