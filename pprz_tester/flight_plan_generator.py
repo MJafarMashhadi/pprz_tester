@@ -6,9 +6,6 @@ from flight_plan import PlanItemSendMessage, PlanItemWaitForState, PlanItem
 from pprzlink_enhancements import MessageBuilder
 
 logger = logging.getLogger('pprz_tester')
-logger.setLevel(logging.INFO)
-logger.handlers.clear()
-logger.addHandler(logging.StreamHandler())
 
 WaypointLocation = namedtuple('WaypointLocation', 'lat long alt')
 

@@ -18,9 +18,6 @@ from pprzlink_enhancements import IvySubscribe
 import aircraft
 
 logger = logging.getLogger('pprz_tester')
-logger.setLevel(logging.INFO)
-logger.handlers.clear()
-logger.addHandler(logging.StreamHandler())
 
 agent_name = "MJafarIvyAgent"
 start_time = datetime.datetime.now().strftime("%m%d-%H%M%S")

@@ -5,9 +5,6 @@ from typing import List
 from observer import Observer
 
 logger = logging.getLogger('pprz_tester')
-logger.setLevel(logging.INFO)
-logger.handlers.clear()
-logger.addHandler(logging.StreamHandler())
 
 
 class PlanItem:
