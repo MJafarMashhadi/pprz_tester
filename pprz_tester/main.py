@@ -3,11 +3,12 @@ import sys
 from flight_plan import PlanItemWaitForState, PlanItemAll, PlanItemJumpToState, \
     FlightPlanPerformingObserver, PlanItemWaitClimb
 from flight_plan_generator import move_waypoints, WaypointLocation, takeoff_and_launch, wait_for_mode_2, \
-    VALID_RANGE_LAT, VALID_RANGE_LON
+    VALID_RANGE_LAT, VALID_RANGE_LON, get_rand_lat, get_rand_lon
 from flight_recorder import RecordFlight
 
 sys.path.append("../pprzlink/lib/v1.0/python")
 import logging
+from random import random
 from typing import Dict
 import datetime
 import random
@@ -44,8 +45,6 @@ def create_aircraft(ac_id, kwargs):
 
     oval_alt = random.uniform(250, 300)
     survey_alt = random.uniform(250, 300)
-    def get_rand_lat(): return random.uniform(*VALID_RANGE_LAT)
-    def get_rand_lon(): return random.uniform(*VALID_RANGE_LON)
 
     set_up = wait_for_mode_2 + takeoff_and_launch + move_waypoints({
         # 3: WaypointLocation(lat=43.4659053, long=1.2700005, alt=300),

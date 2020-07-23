@@ -1,4 +1,5 @@
 import logging
+import random
 from collections import namedtuple
 from typing import Dict, Union
 
@@ -11,6 +12,13 @@ WaypointLocation = namedtuple('WaypointLocation', 'lat long alt')
 
 VALID_RANGE_LAT = [43.4598, 43.4675]
 VALID_RANGE_LON = [ 1.2654,  1.2813]
+
+
+def get_rand_lat(): return random.uniform(*VALID_RANGE_LAT)
+
+
+def get_rand_lon(): return random.uniform(*VALID_RANGE_LON)
+
 
 wait_for_mode_2 = [
     PlanItem(
