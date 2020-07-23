@@ -13,6 +13,10 @@ log_format = 'csv'
 
 
 class RecordFlight(Observer):
+    LOGGING_FORMATS = {
+        'csv': ('.csv', 'to_csv', dict()),
+        'hd5': ('.hd5', 'to_hdf', dict(complevel=5, key=lambda self: f'ac_{self.ac.id}'))
+    }
     def __init__(self, ac):
         super(RecordFlight, self).__init__(ac)
         self.history = {name: list() for name in ['unix_time', 'roll', 'pitch', 'heading', 'agl', 'airspeed',
@@ -55,16 +59,15 @@ class RecordFlight(Observer):
         log_file_name = f'{self.ac.name}_{start_time}'
         log_file_addr = (log_dir / log_file_name).resolve()
         log_file_addr = str(log_file_addr)
-        if log_format == 'csv':
-            log_file_addr += '.csv'
-            logger.debug(f"Saving aircraft telemetry logs to {log_file_addr}")
-            self.history_df.to_csv(log_file_addr)
-        elif log_format == 'hd5':
-            log_file_addr += '.hd5'
-            logger.debug(f"Saving aircraft telemetry logs to {log_file_addr}")
-            self.history_df.to_hdf(log_file_addr, f'ac_{self.ac.id}', complevel=5)
-        else:
+
+        if log_format not in self.LOGGING_FORMATS:
             raise ValueError(f"Unrecognised log format {log_format}")
+        suffix, saver, kwargs = self.LOGGING_FORMATS[log_format]
+        log_file_addr += suffix
+        logger.debug(f"Saving aircraft telemetry logs to {log_file_addr}")
+        getattr(self.history_df, saver)(log_file_addr, **{
+            arg: (value(self) if callable(value) else value) for arg, value in kwargs.items()
+        })
 
     @property
     def history_df(self):  # Not thread safe

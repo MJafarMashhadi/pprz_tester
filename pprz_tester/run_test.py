@@ -37,7 +37,7 @@ parser.add_argument('--agent-name', nargs=1, default="MJafarIvyAgent",
                     help="The unique name to use when communicating on Ivy bus")
 parser.add_argument('-l', '--log', nargs=1, default="logs",
                     help="Log file directory")
-parser.add_argument('--log-format', nargs=1, default="csv", choices=['csv', 'hd5'],
+parser.add_argument('--log-format', nargs=1, default="csv", choices=list(flight_recorder.RecordFlight.LOGGING_FORMATS.keys()),
                     help="The format to store and compress logs in")
 parser.add_argument('--prep-mode', nargs='*', choices=['circle', 'climb'],
                     help="The required conditions before starting the flight scenario")
