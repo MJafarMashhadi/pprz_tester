@@ -33,20 +33,37 @@ def wp_name(name):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--agent-name', nargs=1, default="MJafarIvyAgent")
-parser.add_argument('--log', nargs=1, default="logs")
-parser.add_argument('--prep-mode', nargs='*', choices=['circle', 'climb'])
+parser.add_argument('--agent-name', nargs=1, default="MJafarIvyAgent",
+                    help="The unique name to use when communicating on Ivy bus")
+parser.add_argument('-l', '--log', nargs=1, default="logs",
+                    help="Log file directory")
+parser.add_argument('--prep-mode', nargs='*', choices=['circle', 'climb'],
+                    help="The required conditions before starting the flight scenario")
 parser.add_argument('--fuzz-wps', nargs='*', default=[wp_name(_) for _ in ('1', '2', 'S1', 'S2')],
-                    choices=['1', '2', 'S1', 'S2'], type=wp_name)
-parser.add_argument('--wp-fuzz-bounds-lat', nargs=2, type=float, default=[43.4598, 43.4675])
-parser.add_argument('--wp-fuzz-bounds-lon', nargs=2, type=float, default=[1.2654, 1.2813])
-parser.add_argument('--wp-fuzz-bounds-alt', nargs=2, type=int, default=[250, 300])
-parser.add_argument('-p', '--paparazzi-home', nargs=1)
-parser.add_argument('-w', '--wp-location', nargs=4, action='append')
-parser.add_argument('-b', '--build', action='store_true', default=False)
-parser.add_argument('--gcs', action='store_true', default=False)
-parser.add_argument('--no-sim', action='store_true', default=False)
-parser.add_argument('airframe', choices=['Bixler', 'Microjet'])
+                    choices=['1', '2', 'S1', 'S2'], type=wp_name,
+                    help="Waypoints to fuzz locations of")
+parser.add_argument('--wp-fuzz-bounds-lat', nargs=2, type=float, default=[43.4598, 43.4675],
+                    help="Minimum and maximum latitude to fuzz waypoint locations in",
+                    metavar=('south', 'north'))
+parser.add_argument('--wp-fuzz-bounds-lon', nargs=2, type=float, default=[1.2654, 1.2813],
+                    help="Minimum and maximum longitude to fuzz waypoint locations in",
+                    metavar=('west', 'east'))
+parser.add_argument('--wp-fuzz-bounds-alt', nargs=2, type=int, default=[250, 300],
+                    help="The boundaries inside which waypoint altitudes are fuzzed",
+                    metavar=('floor', 'ceiling'))
+parser.add_argument('-p', '--paparazzi-home', nargs=1,
+                    help="Directory in which Paparazzi source code is cloned in")
+parser.add_argument('-w', '--wp-location', nargs=4, action='append',
+                    help="Fix one or more waypoints locations (overrides fuzzing)",
+                    metavar=('name', 'latitude', 'longitude', 'altitude'))
+parser.add_argument('-b', '--build', action='store_true', default=False,
+                    help="Build the aircraft before launching the simulation")
+parser.add_argument('--gcs', action='store_true', default=False,
+                    help="Open GCS window")
+parser.add_argument('--no-sim', action='store_true', default=False,
+                    help="Does not launch the simulator")
+parser.add_argument('airframe', choices=['Bixler', 'Microjet'],
+                    help="The aircraft to simulate")
 args = parser.parse_args()
 
 # Apply arguments
