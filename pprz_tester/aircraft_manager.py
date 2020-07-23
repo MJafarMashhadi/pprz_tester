@@ -107,6 +107,17 @@ class AircraftManager:
         )
 
     def suicide(self):
+        # GH-12 Flight records need to be saved before calling __del__
+        flight_recorders = []
+        for ac in self.aircraft_list.values():
+            for pname, obs in ac._observers.items():
+                if isinstance(obs, RecordFlight):
+                    obs.save_history()
+                    flight_recorders.append((ac, pname, obs))
+
+        for ac, pname, obs in flight_recorders:
+            ac.look_away(pname, obs)
+
         self.new_aircraft_callback.__ivy_subs__.unsubscribe()
         self.aircraft_list.clear()
         self.ivy.stop()

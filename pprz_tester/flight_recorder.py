@@ -17,6 +17,7 @@ class RecordFlight(Observer):
         'csv': ('.csv', 'to_csv', dict()),
         'hd5': ('.hd5', 'to_hdf', dict(complevel=5, key=lambda self: f'ac_{self.ac.id}'))
     }
+
     def __init__(self, ac):
         super(RecordFlight, self).__init__(ac)
         self.history = {name: list() for name in ['unix_time', 'roll', 'pitch', 'heading', 'agl', 'airspeed',
@@ -53,9 +54,9 @@ class RecordFlight(Observer):
         self._df = None  # Not thread safe
         if len(self.history['unix_time']) % 10 == 0:
             # Periodic save
-            self._save_history()
+            self.save_history()
 
-    def _save_history(self):
+    def save_history(self):
         log_file_name = f'{self.ac.name}_{start_time}'
         log_file_addr = (log_dir / log_file_name).resolve()
         log_file_addr = str(log_file_addr)
@@ -78,5 +79,3 @@ class RecordFlight(Observer):
             self._df = df
         return self._df
 
-    def __del__(self):
-        self._save_history()
