@@ -46,3 +46,5 @@ def move_waypoints(waypoint_data: Dict[Union[str, int], WaypointLocation]):
         return _inner
 
     return [PlanItemSendMessage(create_message_callable(wpid, info)) for wpid, info in waypoint_data.items()]
+
+

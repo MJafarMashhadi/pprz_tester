@@ -4,7 +4,7 @@ from typing import Dict
 
 import aircraft
 import pprzlink as pl
-from flight_plan import PlanItemWaitForState, PlanItemAll, PlanItemJumpToState, FlightPlanPerformingObserver, \
+from flight_plan import PlanItemWaitForState, PlanItemAll, PlanItemJumpToBlock, FlightPlanPerformingObserver, \
     PlanItemWaitClimb, PlanItemWaitForCircles
 from flight_plan_generator import move_waypoints, takeoff_and_launch, wait_for_mode_2
 from flight_recorder import RecordFlight
@@ -58,7 +58,7 @@ class AircraftManager:
         set_up.append(PlanItemAll(*prep_list))
 
         flight_plan_runner = FlightPlanPerformingObserver(new_ac, set_up + [
-            PlanItemJumpToState(state_id_or_name='Oval 1-2'),
+            PlanItemJumpToBlock(state_id_or_name='Oval 1-2'),
         ])
         new_ac.observe('navigation__cur_block', flight_plan_runner)
         new_ac.observe('navigation__circle_count', flight_plan_runner)

@@ -104,9 +104,9 @@ class PlanItemWaitForState(PlanItem):
         return f'<Flight plan item: wait for state {self.state_name_or_id}>'
 
 
-class PlanItemJumpToState(PlanItem):
+class PlanItemJumpToBlock(PlanItem):
     def __init__(self, state_id_or_name, *args, **kwargs):
-        super(PlanItemJumpToState, self).__init__(*args, **kwargs)
+        super(PlanItemJumpToBlock, self).__init__(*args, **kwargs)
         self.state_name_or_id = state_id_or_name
 
     def act(self, ac, property_name, old_value, new_value):
