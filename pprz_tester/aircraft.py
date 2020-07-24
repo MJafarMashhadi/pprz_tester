@@ -111,7 +111,7 @@ class Aircraft(object):
             fp_tree = etree.parse(self.flight_plan_uri)
             for block in fp_tree.xpath("//block"):
                 self.flight_plan_blocks[block.attrib['name']] = int(block.attrib['no'])
-            for idx, wp in enumerate(fp_tree.xpath("//waypoint")):
+            for idx, wp in enumerate(fp_tree.xpath("//waypoint"), start=1):
                 self.flight_plan_waypoints[wp.attrib['name']] = idx
 
             logger.info(f"Loading settings {ac_id}: {self.airframe_settings_uri}")

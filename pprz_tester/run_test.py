@@ -1,7 +1,6 @@
 import argparse
 import logging
 import os
-import random
 import signal
 import subprocess
 import sys
@@ -31,7 +30,7 @@ parser.add_argument('--log-format', nargs=1, default=["csv"], choices=list(fligh
 parser.add_argument('--prep-mode', nargs='*', choices=['circle', 'climb'],
                     help="The required conditions before starting the flight scenario")
 parser.add_argument('--fuzz-wps', nargs='*',
-                    help="Waypoints to fuzz locations of")
+                    help="Waypoints to fuzz locations of. Use * to fuzz all")
 parser.add_argument('--wp-fuzz-bounds-lat', nargs=2, type=float, default=[43.4598, 43.4675],
                     help="Minimum and maximum latitude to fuzz waypoint locations in",
                     metavar=('south', 'north'))
@@ -66,12 +65,10 @@ args = parser.parse_args()
 wp_locs = dict()
 flight_plan_generator.VALID_RANGE_LON = args.wp_fuzz_bounds_lon
 flight_plan_generator.VALID_RANGE_LAT = args.wp_fuzz_bounds_lat
+flight_plan_generator.VALID_RANGE_ALT = args.wp_fuzz_bounds_alt
+
 for name in args.fuzz_wps:
-    wp_locs[name] = flight_plan_generator.WaypointLocation(
-        lat=flight_plan_generator.get_rand_lat(),
-        long=flight_plan_generator.get_rand_lon(),
-        alt=random.uniform(*args.wp_fuzz_bounds_alt),
-    )
+    wp_locs[name] = None
 
 for name, *loc in (args.wp_location or []):
     loc = flight_plan_generator.WaypointLocation(*[float(i) for i in loc])

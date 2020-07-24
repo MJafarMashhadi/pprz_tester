@@ -6,8 +6,9 @@ from typing import Dict
 
 import aircraft
 import flight_plan
+import flight_plan_generator
 import pprzlink as pl
-from flight_plan_generator import move_waypoints, takeoff_and_launch, wait_for_mode_2
+from flight_plan_generator import takeoff_and_launch, wait_for_mode_2
 from flight_recorder import RecordFlight
 from pprzlink_enhancements import IvySubscribe
 
@@ -70,17 +71,7 @@ class AircraftManager:
         yield from wait_for_mode_2
 
         if self.waypoints:
-            _wps = dict()
-            for wpid, new_location in self.waypoints.items():
-                if isinstance(wpid, int):
-                    _wps[wpid] = new_location
-                else:
-                    index = new_ac.flight_plan_waypoints.get(wpid, None)
-                    if index is None:
-                        logger.warning(f'Waypoint {wpid} not found in the flight plan.')
-                    else:
-                        _wps[index] = new_location
-            yield from move_waypoints(_wps)
+            yield from flight_plan_generator.update_waypoints(new_ac, self.waypoints)
             # 3: WaypointLocation(lat=43.4659053, long=1.2700005, alt=300),
             # 4: WaypointLocation(lat=43.4654170, long=1.2799074, alt=300),
 
