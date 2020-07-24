@@ -1,6 +1,5 @@
 import logging
 import math
-from typing import List
 
 from observer import Observer
 
@@ -190,17 +189,20 @@ class StopTest(PlanItem):
 
 
 class FlightPlanPerformingObserver(Observer):
-    def __init__(self, ac, plan_items=list()):
+    def __init__(self, ac, plan_generator):
         super(FlightPlanPerformingObserver, self).__init__(ac)
-        self._plan: List[PlanItem] = list(plan_items)
-
-    @property
-    def plan(self):
-        return self._plan
+        self._plan = plan_generator
+        self._next_item = None
 
     def notify(self, property_name, old_value, new_value):
-        while self._plan:
-            next_item = self._plan[0]
+        while True:
+            if not self._next_item:
+                try:
+                    self._next_item = next(self._plan)  # Pop next item
+                except StopIteration:
+                    self._next_item = None
+                    break
+            next_item = self._next_item
             if not next_item.match(self.ac, property_name, old_value, new_value):
                 break
 
@@ -213,8 +215,9 @@ class FlightPlanPerformingObserver(Observer):
                 traceback.print_exc()
             finally:
                 if act_successful is None or act_successful:
-                    plan_item = self._plan.pop(0)
-                    logger.info(f'Performed a flight plan item, {plan_item}, remaining items={len(self._plan)}')
+                    self._next_item = None  # In next iteration next will be called on the iterator
+                    plan_item = next_item
+                    logger.info(f'Performed {plan_item}')
                 else:
                     logger.error(f'Failed to perform a flight plan item, keeping the item on the queue.')
                     break

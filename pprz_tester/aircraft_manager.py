@@ -59,6 +59,26 @@ class AircraftManager:
         plan_instance = plan_module.Plan(ac)
         return plan_instance.get_items(**kwargs)
 
+    def _plan_generator(self, new_ac):
+        yield from wait_for_mode_2
+        yield from takeoff_and_launch
+
+        if self.waypoints:
+            yield from move_waypoints(self.waypoints)
+            # 3: WaypointLocation(lat=43.4659053, long=1.2700005, alt=300),
+            # 4: WaypointLocation(lat=43.4654170, long=1.2799074, alt=300),
+
+        yield flight_plan.WaitForState(state_name_or_id='Standby')
+
+        prep_list = []
+        if 'circle' in self.prep_mode:
+            prep_list.append(flight_plan.WaitForCircles(n_circles=1))
+        if 'climb' in self.prep_mode:
+            prep_list.append(flight_plan.WaitClimb(tolerance=5))
+        yield flight_plan.WaitAll(*prep_list)
+
+        yield from self.load_plan(new_ac)
+
     def create_aircraft(self, ac_id, kwargs):
         new_ac = aircraft.Aircraft(
             ivy_link=self.ivy,
@@ -66,20 +86,7 @@ class AircraftManager:
             **kwargs
         )
 
-        set_up = wait_for_mode_2 + takeoff_and_launch
-        if self.waypoints:
-            set_up.extend(move_waypoints(self.waypoints))
-            # 3: WaypointLocation(lat=43.4659053, long=1.2700005, alt=300),
-            # 4: WaypointLocation(lat=43.4654170, long=1.2799074, alt=300),
-
-        prep_list = [flight_plan.WaitForState(state_name_or_id='Standby')]
-        if 'circle' in self.prep_mode:
-            prep_list.append(flight_plan.WaitForCircles(n_circles=1))
-        if 'climb' in self.prep_mode:
-            prep_list.append(flight_plan.WaitClimb(tolerance=5))
-        set_up.append(flight_plan.WaitAll(*prep_list))
-
-        flight_plan_runner = flight_plan.FlightPlanPerformingObserver(new_ac, set_up + self.load_plan(new_ac))
+        flight_plan_runner = flight_plan.FlightPlanPerformingObserver(new_ac, self._plan_generator(new_ac))
         new_ac.observe('navigation__cur_block', flight_plan_runner)
         new_ac.observe('navigation__circle_count', flight_plan_runner)
         new_ac.observe('pprz_mode__ap_mode', flight_plan_runner)
