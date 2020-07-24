@@ -21,16 +21,6 @@ logger.addHandler(logging.StreamHandler())
 
 # Parse arguments
 
-
-def wp_name(name):
-    return {
-        '1': 3,
-        '2': 4,
-        'S1': 6,
-        'S2': 7,
-    }[name]
-
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--agent-name', nargs=1, default="MJafarIvyAgent",
                     help="The unique name to use when communicating on Ivy bus")
@@ -40,8 +30,7 @@ parser.add_argument('--log-format', nargs=1, default="csv", choices=list(flight_
                     help="The format to store and compress logs in")
 parser.add_argument('--prep-mode', nargs='*', choices=['circle', 'climb'],
                     help="The required conditions before starting the flight scenario")
-parser.add_argument('--fuzz-wps', nargs='*', default=[wp_name(_) for _ in ('1', '2', 'S1', 'S2')],
-                    choices=['1', '2', 'S1', 'S2'], type=wp_name,
+parser.add_argument('--fuzz-wps', nargs='*',
                     help="Waypoints to fuzz locations of")
 parser.add_argument('--wp-fuzz-bounds-lat', nargs=2, type=float, default=[43.4598, 43.4675],
                     help="Minimum and maximum latitude to fuzz waypoint locations in",
@@ -85,7 +74,6 @@ for name in args.fuzz_wps:
     )
 
 for name, *loc in (args.wp_location or []):
-    name = wp_name(name)
     loc = flight_plan_generator.WaypointLocation(*[float(i) for i in loc])
     wp_locs[name] = loc
 
@@ -93,7 +81,7 @@ for name, *loc in (args.wp_location or []):
 paparazzi_home = os.getenv('PAPARAZZI_HOME') or args.paparazzi_home or '../paparazzi'
 paparazzi_home = Path(paparazzi_home).resolve()
 if not paparazzi_home.exists():
-    raise ValueError("Paparzzi installation not found. Please set PAPARAZZI_HOME environment "
+    raise ValueError("Paparazzi installation not found. Please set PAPARAZZI_HOME environment "
                      "variable or provide the path with --paparazzi-home (or -p) argument")
 paparazzi_home = str(paparazzi_home)
 

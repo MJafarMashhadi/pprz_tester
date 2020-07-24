@@ -68,12 +68,23 @@ class AircraftManager:
 
     def _plan_generator(self, new_ac):
         yield from wait_for_mode_2
-        yield from takeoff_and_launch
 
         if self.waypoints:
-            yield from move_waypoints(self.waypoints)
+            _wps = dict()
+            for wpid, new_location in self.waypoints.items():
+                if isinstance(wpid, int):
+                    _wps[wpid] = new_location
+                else:
+                    index = new_ac.flight_plan_waypoints.get(wpid, None)
+                    if index is None:
+                        logger.warning(f'Waypoint {wpid} not found in the flight plan.')
+                    else:
+                        _wps[index] = new_location
+            yield from move_waypoints(_wps)
             # 3: WaypointLocation(lat=43.4659053, long=1.2700005, alt=300),
             # 4: WaypointLocation(lat=43.4654170, long=1.2799074, alt=300),
+
+        yield from takeoff_and_launch
 
         yield flight_plan.WaitForState(state_name_or_id='Standby')
 
