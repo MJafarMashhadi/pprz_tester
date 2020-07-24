@@ -5,7 +5,6 @@ import random
 import signal
 import subprocess
 import sys
-from datetime import datetime
 from pathlib import Path
 
 sys.path.append(str(Path("../pprzlink/lib/v1.0/python").resolve()))
@@ -185,15 +184,14 @@ def stop_procedure(*_):
         del aircraft_manager
 
 
-flight_recorder.start_time = datetime.now().strftime("%m%d-%H%M%S")
-flight_recorder.log_dir = Path.cwd() / Path(args.log)
-flight_recorder.log_format = args.log_format[0]
 aircraft_manager = aircraft_manager.AircraftManager(
     agent_name=args.agent_name,
     start_ivy=True,
     waypoints=wp_locs,
     prep_mode=list(set(args.prep_mode or {'climb'})),
-    plan=args.plan
+    plan=args.plan,
+    log_file_format=args.log_format[0],
+    log_dir=Path.cwd() / Path(args.log),
 )
 
 signal.signal(signal.SIGINT, stop_procedure)

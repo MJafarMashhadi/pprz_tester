@@ -1,3 +1,4 @@
+import functools
 import importlib
 import logging
 import time
@@ -15,7 +16,10 @@ logger = logging.getLogger('pprz_tester')
 
 class AircraftManager:
     def __init__(self, agent_name="MJafarIvyAgent", start_ivy=False, *,
-                 plan=None, waypoints=dict(), prep_mode=['climb']):
+                 plan=None, waypoints=dict(), prep_mode=['climb'],
+                 log_dir=None, log_file_format=None):
+        from datetime import datetime
+
         self.aircraft_list: Dict[int, aircraft.Aircraft] = dict()
         self.ivy = pl.ivy.IvyMessagesInterface(agent_name=agent_name, start_ivy=False)
         # Had to patch it this way instead of my sweet sweet decorator
@@ -25,6 +29,9 @@ class AircraftManager:
         self.waypoints = waypoints
         self.prep_mode = prep_mode
         self.plan = plan
+        self.start_time = datetime.now().strftime("%m%d-%H%M%S")
+        self.log_dir = log_dir
+        self.log_file_format = log_file_format
 
         if start_ivy:
             self.start()
@@ -79,6 +86,9 @@ class AircraftManager:
 
         yield from self.load_plan(new_ac)
 
+    def _get_log_file_name(self, ac):
+        return f'{ac.name}_{self.start_time}_{self.plan}'
+
     def create_aircraft(self, ac_id, kwargs):
         new_ac = aircraft.Aircraft(
             ivy_link=self.ivy,
@@ -91,7 +101,12 @@ class AircraftManager:
         new_ac.observe('navigation__circle_count', flight_plan_runner)
         new_ac.observe('pprz_mode__ap_mode', flight_plan_runner)
         new_ac.observe('flight_param', flight_plan_runner)
-        new_ac.observe('flight_param', RecordFlight(new_ac))
+        new_ac.observe('flight_param', RecordFlight(
+            ac=new_ac,
+            log_dir=self.log_dir,
+            log_file_name=functools.partial(self._get_log_file_name, ac=new_ac),
+            log_file_format=self.log_file_format,
+        ))
 
         return new_ac
 

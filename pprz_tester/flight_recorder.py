@@ -7,9 +7,6 @@ import pprzlink as pl
 from observer import Observer
 
 logger = logging.getLogger('pprz_tester')
-start_time = ''
-log_dir = Path.cwd() / 'logs'
-log_format = 'csv'
 
 
 class RecordFlight(Observer):
@@ -18,12 +15,16 @@ class RecordFlight(Observer):
         'hd5': ('.hd5', 'to_hdf', dict(complevel=5, key=lambda self: f'ac_{self.ac.id}'))
     }
 
-    def __init__(self, ac):
+    def __init__(self, ac, log_dir=Path.cwd()/'logs', log_file_name=None, log_file_format='csv'):
         super(RecordFlight, self).__init__(ac)
         self.history = {name: list() for name in ['unix_time', 'roll', 'pitch', 'heading', 'agl', 'airspeed',
                                                   'throttle', 'aileron', 'elevator', 'rudder', 'flaps']}
         self.ready = False
         self._df = None
+        self.log_dir = log_dir
+        self.log_file_name = log_file_name
+        self.log_file_format = log_file_format
+        self._log_file_addr = None
 
     def notify(self, property_name, old_value, new_value: pl.message.PprzMessage):
         if not self.ready and any(required is None for required in [
@@ -57,16 +58,25 @@ class RecordFlight(Observer):
             self.save_history()
 
     def save_history(self):
-        log_file_name = f'{self.ac.name}_{start_time}'
-        log_file_addr = (log_dir / log_file_name).resolve()
-        log_file_addr = str(log_file_addr)
-
+        if not self.log_file_name:
+            return
+        log_format = self.log_file_format
         if log_format not in self.LOGGING_FORMATS:
             raise ValueError(f"Unrecognised log format {log_format}")
         suffix, saver, kwargs = self.LOGGING_FORMATS[log_format]
-        log_file_addr += suffix
-        logger.debug(f"Saving aircraft telemetry logs to {log_file_addr}")
-        getattr(self.history_df, saver)(log_file_addr, **{
+
+        if not self._log_file_addr:
+            log_file_name = self.log_file_name
+            if callable(log_file_name):
+                log_file_name = log_file_name()
+
+            log_file_addr = (self.log_dir / log_file_name).resolve()
+            log_file_addr = str(log_file_addr)
+            log_file_addr += suffix
+            self.log_file_addr = log_file_addr
+
+        logger.debug(f"Saving aircraft telemetry logs to {self.log_file_addr}")
+        getattr(self.history_df, saver)(self.log_file_addr, **{
             arg: (value(self) if callable(value) else value) for arg, value in kwargs.items()
         })
 
