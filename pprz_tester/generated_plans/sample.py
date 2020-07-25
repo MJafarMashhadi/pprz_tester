@@ -12,7 +12,7 @@ class Example(PlanBase):
         elif self.ac.name == 'Bixler':
             plan = [
                 flight_plan.JumpToBlock('Fly in Square'),
-                flight_plan.WaitForCircles(n_circles=2),
+                flight_plan.WaitForSeconds(length=15)
             ]
         else:
             plan = []

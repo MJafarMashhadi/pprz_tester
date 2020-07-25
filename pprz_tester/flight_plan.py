@@ -1,5 +1,6 @@
 import logging
 import math
+import time
 
 from observer import Observer
 
@@ -186,6 +187,25 @@ class StopTest(PlanItem):
 
     def __str__(self):
         return '<Flight plan item: stop test>'
+
+
+class WaitForSeconds(PlanItem):
+    _now = time.time
+
+    def __init__(self, length, *args, **kwargs):
+        self.first_encounter = None
+        self.length = length
+        super(WaitForSeconds, self).__init__(*args, **kwargs)
+
+    def match(self, *args, **kwargs):
+        super(WaitForSeconds, self).match(*args, **kwargs)
+        if self.first_encounter is None:
+            self.first_encounter = self._now()
+
+        return self._now() - self.first_encounter >= self.length
+
+    def __str__(self):
+        return f'<Flight plan item: wait for {self.length} seconds>'
 
 
 class FlightPlanPerformingObserver(Observer):
