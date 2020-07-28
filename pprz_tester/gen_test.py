@@ -76,7 +76,7 @@ wp_locs = dict()
 flight_plan_generator.VALID_RANGE_LON = args.wp_fuzz_bounds_lon
 flight_plan_generator.VALID_RANGE_LAT = args.wp_fuzz_bounds_lat
 flight_plan_generator.VALID_RANGE_ALT = args.wp_fuzz_bounds_alt
-for name in args.fuzz_wps:
+for name in (args.fuzz_wps or []):
     wp_locs[name] = None
 for name, *loc in (args.wp_location or []):
     loc = flight_plan_generator.WaypointLocation(*[float(i) for i in loc])
