@@ -5,9 +5,8 @@ import signal
 import subprocess
 from pathlib import Path
 
-#
-import aircraft_manager
 import cli_helper
+import aircraft_manager
 import flight_recorder
 
 # Set up logging
@@ -22,16 +21,19 @@ logger.addHandler(logging.StreamHandler())
 parser = argparse.ArgumentParser()
 parser.add_argument('--agent-name', nargs=1, default="MJafarIvyAgent",
                     help="The unique name to use when communicating on Ivy bus")
-parser.add_argument('-l', '--log', nargs=1, default="logs",
+
+log_group = parser.add_argument_group('Logging')
+log_group.add_argument('-l', '--log', nargs=1, default="logs",
                     help="Log file directory")
-parser.add_argument('--log-format', nargs=1, default=["csv"], choices=list(flight_recorder.RecordFlight.LOGGING_FORMATS.keys()),
+log_group.add_argument('--log-format', nargs=1, default=["csv"], choices=list(flight_recorder.RecordFlight.LOGGING_FORMATS.keys()),
                     help="The format to store and compress logs in")
-parser.add_argument('--prep-mode', nargs='*', choices=['circle', 'climb'],
-                    help="The required conditions before starting the flight scenario")
+
 cli_helper.add_paparazzi_home_arg(parser)
+
 wps_group = parser.add_argument_group('waypoint locations')
 cli_helper.add_waypoint_fuzzing_args(wps_group)
 cli_helper.add_waypoint_fixing_args(wps_group)
+
 run_conf = parser.add_argument_group('run configurations')
 run_conf.add_argument('-b', '--build', action='store_true', default=False,
                     help="Build the aircraft before launching the simulation")
@@ -39,6 +41,9 @@ run_conf.add_argument('--gcs', action='store_true', default=False,
                     help="Open GCS window")
 run_conf.add_argument('--no-sim', action='store_true', default=False,
                     help="Does not launch the simulator")
+run_conf.add_argument('--prep-mode', nargs='*', choices=['circle', 'climb'],
+                    help="The required conditions before starting the flight scenario")
+
 cli_helper.add_airframe_arg(parser)
 parser.add_argument('plan',
                     help="Plan name to run. Format: <plan_name>[<arg1>=<val1>,<arg2>=<val2>,...]. Arguments are "
