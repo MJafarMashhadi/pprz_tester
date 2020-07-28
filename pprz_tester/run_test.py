@@ -5,6 +5,7 @@ import signal
 import subprocess
 from pathlib import Path
 
+#
 import aircraft_manager
 import cli_helper
 import flight_recorder
@@ -31,11 +32,12 @@ cli_helper.add_paparazzi_home_arg(parser)
 wps_group = parser.add_argument_group('waypoint locations')
 cli_helper.add_waypoint_fuzzing_args(wps_group)
 cli_helper.add_waypoint_fixing_args(wps_group)
-parser.add_argument('-b', '--build', action='store_true', default=False,
+run_conf = parser.add_argument_group('run configurations')
+run_conf.add_argument('-b', '--build', action='store_true', default=False,
                     help="Build the aircraft before launching the simulation")
-parser.add_argument('--gcs', action='store_true', default=False,
+run_conf.add_argument('--gcs', action='store_true', default=False,
                     help="Open GCS window")
-parser.add_argument('--no-sim', action='store_true', default=False,
+run_conf.add_argument('--no-sim', action='store_true', default=False,
                     help="Does not launch the simulator")
 cli_helper.add_airframe_arg(parser)
 parser.add_argument('plan',
