@@ -17,7 +17,7 @@ logger = logging.getLogger('pprz_tester')
 
 class AircraftManager:
     def __init__(self, agent_name="MJafarIvyAgent", start_ivy=False, *,
-                 plan=None, waypoints=dict(), prep_mode=['climb'],
+                 plan=None, waypoints=dict(), time_scale=1., prep_mode=['climb'],
                  log_dir=None, log_file_format=None):
         from datetime import datetime
 
@@ -33,6 +33,7 @@ class AircraftManager:
         self.start_time = datetime.now().strftime("%m%d-%H%M%S")
         self.log_dir = log_dir
         self.log_file_format = log_file_format
+        self.time_scale = time_scale
 
         if start_ivy:
             self.start()
@@ -41,6 +42,16 @@ class AircraftManager:
         self.ivy.start()
         time.sleep(0.1)  # TOFF
         self.request_aircraft_list()
+
+        def _set_time_scale(ac_id, msg):
+            old_ts = float(msg['time_scale'])
+            if old_ts == self.time_scale:
+                return
+
+            msg['time_scale'] = self.time_scale
+            self.ivy.send(ac_id=ac_id, msg=msg)
+
+        self.ivy.send_request('ground', 'WORLD_ENV', _set_time_scale, )  # TODO: needs params, should be moved elsewhere
 
     def add_aircraft_if_new(self, ac_id, kwargs):
         if ac_id not in self.aircraft_list:

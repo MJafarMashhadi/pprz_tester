@@ -39,8 +39,10 @@ run_conf.add_argument('--gcs', action='store_true', default=False,
 run_conf.add_argument('--no-sim', action='store_true', default=False,
                     help="Does not launch the simulator")
 run_conf.add_argument('--prep-mode', nargs='*', choices=['circle', 'climb'],
-                    help="The required conditions before starting the flight scenario")
-
+                      help="The required conditions before starting the flight scenario")
+run_conf.add_argument('-t', '--time-scale', type=float, default=1.,
+                      help='Time scale to speed up the simulation. If it is too high it might cause promlems for the'
+                           'simulation. Consult Paparazzi\'s Gaia tool docs for more info')
 cli_helper.add_airframe_arg(parser)
 parser.add_argument('plan',
                     help="Plan name to run. Format: <plan_name>[<arg1>=<val1>,<arg2>=<val2>,...]. Arguments are "
@@ -144,6 +146,7 @@ aircraft_manager = aircraft_manager.AircraftManager(
     agent_name=args.agent_name,
     start_ivy=True,
     waypoints=wp_locs,
+    time_scale=args.time_scale,
     prep_mode=list(set(args.prep_mode or {'climb'})),
     plan=args.plan,
     log_file_format=args.log_format[0],
