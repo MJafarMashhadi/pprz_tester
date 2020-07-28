@@ -50,14 +50,13 @@ args = parser.parse_args()
 
 ## Start
 # Set paparazzi home
-paparazzi_home = os.getenv('PAPARAZZI_HOME') or args.paparazzi_home or '../paparazzi'
+paparazzi_home = args.paparazzi_home or os.getenv('PAPARAZZI_HOME') or '../paparazzi'
 if not isinstance(paparazzi_home, Path):
     paparazzi_home = Path(paparazzi_home)
 paparazzi_home = paparazzi_home.resolve()
 if not (paparazzi_home.exists() and paparazzi_home.is_dir()):
     raise ValueError("Paparazzi installation not found. Please set PAPARAZZI_HOME environment "
                      "variable or provide the path with --paparazzi-home (or -p) argument")
-paparazzi_home = Path(paparazzi_home)
 
 # Load flight plan
 flight_plan_uri = paparazzi_home / 'var' / 'aircrafts' / args.airframe / 'flight_plan.xml'

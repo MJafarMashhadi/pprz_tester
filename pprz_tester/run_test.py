@@ -40,7 +40,7 @@ parser.add_argument('--wp-fuzz-bounds-lon', nargs=2, type=float, default=[1.2654
 parser.add_argument('--wp-fuzz-bounds-alt', nargs=2, type=int, default=[250, 300],
                     help="The boundaries inside which waypoint altitudes are fuzzed",
                     metavar=('floor', 'ceiling'))
-parser.add_argument('-p', '--paparazzi-home', nargs=1,
+parser.add_argument('-p', '--paparazzi-home', type=Path,
                     help="Directory in which Paparazzi source code is cloned in")
 parser.add_argument('-w', '--wp-location', nargs=4, action='append',
                     help="Fix one or more waypoints locations (overrides fuzzing)",
@@ -75,13 +75,13 @@ for name, *loc in (args.wp_location or []):
     wp_locs[name] = loc
 
 ## Start
-paparazzi_home = os.getenv('PAPARAZZI_HOME') or args.paparazzi_home or '../paparazzi'
-paparazzi_home = Path(paparazzi_home).resolve()
-if not paparazzi_home.exists():
+paparazzi_home = args.paparazzi_home or os.getenv('PAPARAZZI_HOME') or '../paparazzi'
+if not isinstance(paparazzi_home, Path):
+    paparazzi_home = Path(paparazzi_home)
+paparazzi_home = paparazzi_home.resolve()
+if not (paparazzi_home.exists() and paparazzi_home.is_dir()):
     raise ValueError("Paparazzi installation not found. Please set PAPARAZZI_HOME environment "
                      "variable or provide the path with --paparazzi-home (or -p) argument")
-paparazzi_home = str(paparazzi_home)
-
 
 def build():
     command = ['make', '-C', paparazzi_home, '-f', 'Makefile.ac', 'AIRCRAFT=' + args.airframe, 'nps.compile']
