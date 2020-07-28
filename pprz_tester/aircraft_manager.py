@@ -64,7 +64,7 @@ class AircraftManager:
             module_name = self.plan
 
         plan_module = importlib.import_module(f'generated_plans.{module_name}')
-        plan_instance = plan_module.Plan(ac)
+        plan_instance = plan_module.Plan(ac=ac)
         return plan_instance.get_items(**kwargs)
 
     def _plan_generator(self, new_ac):
