@@ -1,14 +1,11 @@
 import argparse
 import logging
-import os
-import sys
 from pathlib import Path
 from typing import Union, Iterable
 
 from lxml import etree
 
-sys.path.append(str(Path("../pprzlink/lib/v1.0/python").resolve()))
-import flight_plan_generator
+import cli_helper
 
 # Set up logging
 logger = logging.getLogger('pprz_tester')
@@ -18,22 +15,9 @@ logger.addHandler(logging.StreamHandler())
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--fuzz-wps', nargs='*',
-                    help="Waypoints to fuzz locations of. Use * to fuzz all")
-parser.add_argument('--wp-fuzz-bounds-lat', nargs=2, type=float, default=[43.4598, 43.4675],
-                    help="Minimum and maximum latitude to fuzz waypoint locations in",
-                    metavar=('south', 'north'))
-parser.add_argument('--wp-fuzz-bounds-lon', nargs=2, type=float, default=[1.2654, 1.2813],
-                    help="Minimum and maximum longitude to fuzz waypoint locations in",
-                    metavar=('west', 'east'))
-parser.add_argument('--wp-fuzz-bounds-alt', nargs=2, type=int, default=[250, 300],
-                    help="The boundaries inside which waypoint altitudes are fuzzed",
-                    metavar=('floor', 'ceiling'))
-parser.add_argument('-p', '--paparazzi-home', type=Path,
-                    help="Directory in which Paparazzi source code is cloned in")
-parser.add_argument('-w', '--wp-location', nargs=4, action='append',
-                    help="Fix one or more waypoints locations (overrides fuzzing)",
-                    metavar=('name', 'latitude', 'longitude', 'altitude'))
+cli_helper.add_paparazzi_home_arg(parser)
+cli_helper.add_waypoint_fuzzing_args(parser)
+cli_helper.add_waypoint_fixing_args(parser)
 parser.add_argument('-i', '--include', nargs='+',
                     help="Flight plan blocks to include in the generated plans")
 parser.add_argument('-x', '--exclude', nargs='+',
@@ -41,22 +25,16 @@ parser.add_argument('-x', '--exclude', nargs='+',
 parser.add_argument('-l', '--length', default='*',
                     help="How many blocks to include in the generated flight plan. Enter '*' to generate all possible "
                          "lengths from 1 to the number of available blocks.")
+cli_helper.add_airframe_arg(parser)
 parser.add_argument('output',
-                    help="Directory to output the test plans.")
-parser.add_argument('airframe', choices=['Bixler', 'Microjet'],
-                    help="The aircraft to simulate")
+                    help="Directory to output the test plans")
 
 args = parser.parse_args()
 
+
 ## Start
-# Set paparazzi home
-paparazzi_home = args.paparazzi_home or os.getenv('PAPARAZZI_HOME') or '../paparazzi'
-if not isinstance(paparazzi_home, Path):
-    paparazzi_home = Path(paparazzi_home)
-paparazzi_home = paparazzi_home.resolve()
-if not (paparazzi_home.exists() and paparazzi_home.is_dir()):
-    raise ValueError("Paparazzi installation not found. Please set PAPARAZZI_HOME environment "
-                     "variable or provide the path with --paparazzi-home (or -p) argument")
+wp_locs = cli_helper.parse_waypoints(args)
+paparazzi_home = cli_helper.get_paparazzi_home(args)
 
 # Load flight plan
 flight_plan_uri = paparazzi_home / 'var' / 'aircrafts' / args.airframe / 'flight_plan.xml'
@@ -70,16 +48,6 @@ for block in fp_tree.xpath("//block"):
 for idx, wp in enumerate(fp_tree.xpath("//waypoint"), start=1):
     flight_plan_waypoints[wp.attrib['name']] = idx
 
-# Make waypoint movement commands
-wp_locs = dict()
-flight_plan_generator.VALID_RANGE_LON = args.wp_fuzz_bounds_lon
-flight_plan_generator.VALID_RANGE_LAT = args.wp_fuzz_bounds_lat
-flight_plan_generator.VALID_RANGE_ALT = args.wp_fuzz_bounds_alt
-for name in (args.fuzz_wps or []):
-    wp_locs[name] = None
-for name, *loc in (args.wp_location or []):
-    loc = flight_plan_generator.WaypointLocation(*[float(i) for i in loc])
-    wp_locs[name] = loc
 
 # Test lengths
 test_length = args.length

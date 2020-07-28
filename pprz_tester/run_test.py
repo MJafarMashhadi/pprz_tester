@@ -3,13 +3,11 @@ import logging
 import os
 import signal
 import subprocess
-import sys
 from pathlib import Path
 
-sys.path.append(str(Path("../pprzlink/lib/v1.0/python").resolve()))
-import flight_plan_generator
-import flight_recorder
 import aircraft_manager
+import cli_helper
+import flight_recorder
 
 # Set up logging
 logger = logging.getLogger('pprz_tester')
@@ -29,59 +27,27 @@ parser.add_argument('--log-format', nargs=1, default=["csv"], choices=list(fligh
                     help="The format to store and compress logs in")
 parser.add_argument('--prep-mode', nargs='*', choices=['circle', 'climb'],
                     help="The required conditions before starting the flight scenario")
-parser.add_argument('--fuzz-wps', nargs='*',
-                    help="Waypoints to fuzz locations of. Use * to fuzz all")
-parser.add_argument('--wp-fuzz-bounds-lat', nargs=2, type=float, default=[43.4598, 43.4675],
-                    help="Minimum and maximum latitude to fuzz waypoint locations in",
-                    metavar=('south', 'north'))
-parser.add_argument('--wp-fuzz-bounds-lon', nargs=2, type=float, default=[1.2654, 1.2813],
-                    help="Minimum and maximum longitude to fuzz waypoint locations in",
-                    metavar=('west', 'east'))
-parser.add_argument('--wp-fuzz-bounds-alt', nargs=2, type=int, default=[250, 300],
-                    help="The boundaries inside which waypoint altitudes are fuzzed",
-                    metavar=('floor', 'ceiling'))
-parser.add_argument('-p', '--paparazzi-home', type=Path,
-                    help="Directory in which Paparazzi source code is cloned in")
-parser.add_argument('-w', '--wp-location', nargs=4, action='append',
-                    help="Fix one or more waypoints locations (overrides fuzzing)",
-                    metavar=('name', 'latitude', 'longitude', 'altitude'))
+cli_helper.add_paparazzi_home_arg(parser)
+cli_helper.add_waypoint_fuzzing_args(parser)
+cli_helper.add_waypoint_fixing_args(parser)
 parser.add_argument('-b', '--build', action='store_true', default=False,
                     help="Build the aircraft before launching the simulation")
 parser.add_argument('--gcs', action='store_true', default=False,
                     help="Open GCS window")
 parser.add_argument('--no-sim', action='store_true', default=False,
                     help="Does not launch the simulator")
-parser.add_argument('airframe', choices=['Bixler', 'Microjet'],
-                    help="The aircraft to simulate")
+cli_helper.add_airframe_arg(parser)
 parser.add_argument('plan',
                     help="Plan name to run. Format: <plan_name>[<arg1>=<val1>,<arg2>=<val2>,...]. Arguments are "
                          "optional. If provided, they will be passed to get_items as keyword arguments. They need "
                          "to be enclosed in square brackets.")
 args = parser.parse_args()
 
-# Apply arguments
-
-## Waypoints
-wp_locs = dict()
-flight_plan_generator.VALID_RANGE_LON = args.wp_fuzz_bounds_lon
-flight_plan_generator.VALID_RANGE_LAT = args.wp_fuzz_bounds_lat
-flight_plan_generator.VALID_RANGE_ALT = args.wp_fuzz_bounds_alt
-
-for name in (args.fuzz_wps or []):
-    wp_locs[name] = None
-
-for name, *loc in (args.wp_location or []):
-    loc = flight_plan_generator.WaypointLocation(*[float(i) for i in loc])
-    wp_locs[name] = loc
 
 ## Start
-paparazzi_home = args.paparazzi_home or os.getenv('PAPARAZZI_HOME') or '../paparazzi'
-if not isinstance(paparazzi_home, Path):
-    paparazzi_home = Path(paparazzi_home)
-paparazzi_home = paparazzi_home.resolve()
-if not (paparazzi_home.exists() and paparazzi_home.is_dir()):
-    raise ValueError("Paparazzi installation not found. Please set PAPARAZZI_HOME environment "
-                     "variable or provide the path with --paparazzi-home (or -p) argument")
+wp_locs = cli_helper.parse_waypoints(args)
+paparazzi_home = cli_helper.get_paparazzi_home(args)
+
 
 def build():
     command = ['make', '-C', paparazzi_home, '-f', 'Makefile.ac', 'AIRCRAFT=' + args.airframe, 'nps.compile']
