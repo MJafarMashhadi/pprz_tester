@@ -9,9 +9,6 @@ import cli_helper
 
 # Set up logging
 logger = logging.getLogger('pprz_tester')
-logger.setLevel(logging.INFO)
-logger.handlers.clear()
-logger.addHandler(logging.StreamHandler())
 
 
 parser = argparse.ArgumentParser()

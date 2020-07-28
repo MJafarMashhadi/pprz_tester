@@ -11,10 +11,6 @@ import flight_recorder
 
 # Set up logging
 logger = logging.getLogger('pprz_tester')
-logger.setLevel(logging.INFO)
-logger.handlers.clear()
-logger.addHandler(logging.StreamHandler())
-
 
 # Parse arguments
 
@@ -24,9 +20,10 @@ parser.add_argument('--agent-name', nargs=1, default="MJafarIvyAgent",
 
 log_group = parser.add_argument_group('Logging')
 log_group.add_argument('-l', '--log', nargs=1, default="logs",
-                    help="Log file directory")
-log_group.add_argument('--log-format', nargs=1, default=["csv"], choices=list(flight_recorder.RecordFlight.LOGGING_FORMATS.keys()),
-                    help="The format to store and compress logs in")
+                       help="Log file directory")
+log_group.add_argument('--log-format', nargs=1, default=["csv"],
+                       choices=list(flight_recorder.RecordFlight.LOGGING_FORMATS.keys()),
+                       help="The format to store and compress logs in")
 
 cli_helper.add_paparazzi_home_arg(parser)
 
@@ -36,7 +33,7 @@ cli_helper.add_waypoint_fixing_args(wps_group)
 
 run_conf = parser.add_argument_group('run configurations')
 run_conf.add_argument('-b', '--build', action='store_true', default=False,
-                    help="Build the aircraft before launching the simulation")
+                      help="Build the aircraft before launching the simulation")
 run_conf.add_argument('--gcs', action='store_true', default=False,
                     help="Open GCS window")
 run_conf.add_argument('--no-sim', action='store_true', default=False,
