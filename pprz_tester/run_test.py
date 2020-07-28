@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--agent-name', nargs=1, default="MJafarIvyAgent",
                     help="The unique name to use when communicating on Ivy bus")
 
-log_group = parser.add_argument_group('Logging')
+log_group = parser.add_argument_group('flight logs')
 log_group.add_argument('-l', '--log', nargs=1, default="logs",
                        help="Log file directory")
 log_group.add_argument('--log-format', nargs=1, default=["csv"],

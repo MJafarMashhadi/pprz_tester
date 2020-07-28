@@ -10,7 +10,6 @@ import cli_helper
 # Set up logging
 logger = logging.getLogger('pprz_tester')
 
-
 parser = argparse.ArgumentParser()
 cli_helper.add_paparazzi_home_arg(parser)
 
@@ -18,20 +17,20 @@ wps_group = parser.add_argument_group('waypoint locations')
 cli_helper.add_waypoint_fuzzing_args(wps_group)
 cli_helper.add_waypoint_fixing_args(wps_group)
 
-parser.add_argument('-i', '--include', nargs='+',
-                    help="Flight plan blocks to include in the generated plans")
-parser.add_argument('-x', '--exclude', nargs='+',
-                    help="Flight plan blocks to exclude from the generated plans")
-parser.add_argument('-l', '--length', default='*',
-                    help="How many blocks to include in the generated flight plan. Enter '*' to generate all possible "
-                         "lengths from 1 to the number of available blocks.")
+fp_group = parser.add_argument_group('flight plan options')
+fp_group.add_argument('-i', '--include', nargs='+',
+                      help="Flight plan blocks to include in the generated plans")
+fp_group.add_argument('-x', '--exclude', nargs='+',
+                      help="Flight plan blocks to exclude from the generated plans")
+fp_group.add_argument('-l', '--length', default='*',
+                      help="How many blocks to include in the generated flight plan. Enter '*' to generate all possible"
+                           " lengths from 1 to the number of available blocks.")
 
 cli_helper.add_airframe_arg(parser)
 parser.add_argument('output',
                     help="Directory to output the test plans")
 
 args = parser.parse_args()
-
 
 ## Start
 wp_locs = cli_helper.parse_waypoints(args)
