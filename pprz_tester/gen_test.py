@@ -16,8 +16,9 @@ logger.addHandler(logging.StreamHandler())
 
 parser = argparse.ArgumentParser()
 cli_helper.add_paparazzi_home_arg(parser)
-cli_helper.add_waypoint_fuzzing_args(parser)
-cli_helper.add_waypoint_fixing_args(parser)
+wps_group = parser.add_argument_group('waypoint locations')
+cli_helper.add_waypoint_fuzzing_args(wps_group)
+cli_helper.add_waypoint_fixing_args(wps_group)
 parser.add_argument('-i', '--include', nargs='+',
                     help="Flight plan blocks to include in the generated plans")
 parser.add_argument('-x', '--exclude', nargs='+',

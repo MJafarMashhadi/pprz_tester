@@ -28,8 +28,9 @@ parser.add_argument('--log-format', nargs=1, default=["csv"], choices=list(fligh
 parser.add_argument('--prep-mode', nargs='*', choices=['circle', 'climb'],
                     help="The required conditions before starting the flight scenario")
 cli_helper.add_paparazzi_home_arg(parser)
-cli_helper.add_waypoint_fuzzing_args(parser)
-cli_helper.add_waypoint_fixing_args(parser)
+wps_group = parser.add_argument_group('waypoint locations')
+cli_helper.add_waypoint_fuzzing_args(wps_group)
+cli_helper.add_waypoint_fixing_args(wps_group)
 parser.add_argument('-b', '--build', action='store_true', default=False,
                     help="Build the aircraft before launching the simulation")
 parser.add_argument('--gcs', action='store_true', default=False,
