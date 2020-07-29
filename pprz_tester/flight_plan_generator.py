@@ -15,13 +15,13 @@ VALID_RANGE_LON = [ 1.2654,  1.2813]
 VALID_RANGE_ALT = [250, 300]
 
 
-def get_rand_lat(): return random.uniform(*VALID_RANGE_LAT)
+def get_rand_lat(): return round(random.uniform(*VALID_RANGE_LAT), 6)
 
 
-def get_rand_lon(): return random.uniform(*VALID_RANGE_LON)
+def get_rand_lon(): return round(random.uniform(*VALID_RANGE_LON), 6)
 
 
-def get_rand_alt(): return random.uniform(*VALID_RANGE_ALT)
+def get_rand_alt(): return round(random.uniform(*VALID_RANGE_ALT))
 
 
 def get_rand_waypoint(): return WaypointLocation(lat=get_rand_lat(), long=get_rand_lon(), alt=get_rand_alt())
@@ -55,7 +55,7 @@ def move_waypoints(waypoint_data: Dict[Union[str, int], WaypointLocation]):
     return [flight_plan.SendMessage(create_message_callable(wp_id, info)) for wp_id, info in waypoint_data.items()]
 
 
-def update_waypoints(ac, waypoints):
+def prepare_new_waypoint_locations(flight_plan_waypoints, waypoints):
     fixed_points = dict()
     fuzz_points = dict()
 
@@ -67,7 +67,7 @@ def update_waypoints(ac, waypoints):
             fuzz_all = True
             continue
         else:
-            index = ac.flight_plan_waypoints.get(wp_idx, None)
+            index = flight_plan_waypoints.get(wp_idx, None)
             if index is None:
                 logger.warning(f'Waypoint {wp_idx} not found in the flight plan.')
                 continue
@@ -77,7 +77,7 @@ def update_waypoints(ac, waypoints):
             fixed_points[index] = location
 
     if fuzz_all:
-        for wp_idx in ac.flight_plan_waypoints.values() - fixed_points.keys():
+        for wp_idx in flight_plan_waypoints.values() - fixed_points.keys():
             fuzz_points[wp_idx] = get_rand_waypoint()
 
-    return move_waypoints(dict(collections.ChainMap(fixed_points, fuzz_points)))
+    return dict(collections.ChainMap(fixed_points, fuzz_points))

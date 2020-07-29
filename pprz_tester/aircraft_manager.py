@@ -71,7 +71,9 @@ class AircraftManager:
         yield from wait_for_mode_2
 
         if self.waypoints:
-            yield from flight_plan_generator.update_waypoints(new_ac, self.waypoints)
+            yield from flight_plan_generator.move_waypoints(
+                flight_plan_generator.prepare_new_waypoint_locations(new_ac.flight_plan_waypoints, self.waypoints)
+            )
             # 3: WaypointLocation(lat=43.4659053, long=1.2700005, alt=300),
             # 4: WaypointLocation(lat=43.4654170, long=1.2799074, alt=300),
 
