@@ -73,10 +73,10 @@ class RecordFlight(Observer):
             log_file_addr = (self.log_dir / log_file_name).resolve()
             log_file_addr = str(log_file_addr)
             log_file_addr += suffix
-            self.log_file_addr = log_file_addr
+            self._log_file_addr = log_file_addr
 
-        logger.debug(f"Saving aircraft telemetry logs to {self.log_file_addr}")
-        getattr(self.history_df, saver)(self.log_file_addr, **{
+        logger.debug(f"Saving aircraft telemetry logs to {self._log_file_addr}")
+        getattr(self.history_df, saver)(self._log_file_addr, **{
             arg: (value(self) if callable(value) else value) for arg, value in kwargs.items()
         })
 
