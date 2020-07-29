@@ -91,7 +91,7 @@ def gen_blocks(blocks, l, include=None, exclude=None):
                 yield combi
 
     for combination in _combinations(0, l - len(include)):
-        yield list(include) + combination
+        yield list(include) + [block_pool[i] for i in combination]
 
 
 # Plan template
