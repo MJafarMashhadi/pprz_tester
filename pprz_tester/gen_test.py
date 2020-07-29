@@ -1,5 +1,6 @@
 import argparse
 import logging
+import random
 from pathlib import Path
 from typing import Union, Iterable
 
@@ -131,6 +132,7 @@ for i, blocks in enumerate(gen_blocks(flight_plan_blocks, test_length, args.incl
     for block in blocks:
         block_jumps.append(f"flight_plan.JumpToBlock('{flight_plan_blocks[block]}')")
         block_jumps.append(f"flight_plan.WaitForState('{flight_plan_blocks[block]}')")
+        block_jumps.append(f"flight_plan.WaitForSeconds({random.uniform(50, 70)})")
 
     scenarios.append("lambda: [\n" +
                     ',\n'.join(indent(block_jumps, n=4)) + ", \n" +
