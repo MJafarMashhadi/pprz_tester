@@ -2,8 +2,6 @@ import logging
 import math
 import time
 
-from observer import Observer
-
 logger = logging.getLogger('pprz_tester')
 
 
@@ -172,8 +170,8 @@ class WaitClimb(PlanItem):
             return False
 
         return old_value is not None \
-           and math.fabs(old_value - new_alt) < self.tolerance \
-           and math.fabs(new_value['climb']) < (self.tolerance / 10.)
+               and math.fabs(old_value - new_alt) < self.tolerance \
+               and math.fabs(new_value['climb']) < (self.tolerance / 10.)
 
     def __str__(self):
         return f'<Flight plan item: wait until altitude stabilizes, tolerance={self.tolerance}m>'
@@ -206,38 +204,3 @@ class WaitForSeconds(PlanItem):
 
     def __str__(self):
         return f'<Flight plan item: wait for {self.length} seconds>'
-
-
-class FlightPlanPerformingObserver(Observer):
-    def __init__(self, ac, plan_generator):
-        super(FlightPlanPerformingObserver, self).__init__(ac)
-        self._plan = plan_generator
-        self._next_item = None
-
-    def notify(self, property_name, old_value, new_value):
-        while True:
-            if not self._next_item:
-                try:
-                    self._next_item = next(self._plan)  # Pop next item
-                except StopIteration:
-                    self._next_item = None
-                    break
-            next_item = self._next_item
-            if not next_item.match(self.ac, property_name, old_value, new_value):
-                break
-
-            act_successful = False
-            try:
-                act_successful = next_item.act(self.ac, property_name, old_value, new_value)
-            except:
-                act_successful = False
-                import traceback
-                traceback.print_exc()
-            finally:
-                if act_successful is None or act_successful:
-                    self._next_item = None  # In next iteration next will be called on the iterator
-                    plan_item = next_item
-                    logger.info(f'Performed {plan_item}')
-                else:
-                    logger.error(f'Failed to perform a flight plan item, keeping the item on the queue.')
-                    break

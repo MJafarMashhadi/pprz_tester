@@ -9,7 +9,7 @@ from lxml import etree
 import cli_helper
 
 # Set up logging
-import flight_plan_generator
+from flight_plan.generation_helper import prepare_new_waypoint_locations
 
 logger = logging.getLogger('pprz_tester')
 
@@ -50,10 +50,7 @@ for block in fp_tree.xpath("//block"):
 for idx, wp in enumerate(fp_tree.xpath("//waypoint"), start=1):
     flight_plan_waypoints[wp.attrib['name']] = idx
 
-new_wp_locs = flight_plan_generator.prepare_new_waypoint_locations(
-    flight_plan_waypoints,
-    cli_helper.parse_waypoints(args)
-)
+new_wp_locs = prepare_new_waypoint_locations(flight_plan_waypoints, cli_helper.parse_waypoints(args))
 
 # Test lengths
 test_length = args.length
@@ -96,8 +93,9 @@ def gen_blocks(blocks, l, include=None, exclude=None):
 
 # Plan template
 plan_template = """
-import flight_plan
-import flight_plan_generator
+from flight_plan import items
+from flight_plan import generation_helper
+from flight_plan.waypoint import WaypointLocation
 from . import PlanBase
 
 
@@ -107,9 +105,9 @@ class {ClassName}(PlanBase):
 {params}
         new_wp_locs = {new_wps}
         if new_wp_locs:
-            plan += flight_plan_generator.move_waypoints(new_wp_locs)
+            plan += generation_helper.move_waypoints(new_wp_locs)
 {get_items}
-        plan.append(flight_plan.StopTest())
+        plan.append(items.StopTest())
         return plan
 
 
@@ -139,9 +137,9 @@ scenarios = []
 for i, blocks in enumerate(gen_blocks(flight_plan_blocks, test_length, args.include, args.exclude)):
     block_jumps = []
     for block in blocks:
-        block_jumps.append(f"flight_plan.JumpToBlock('{flight_plan_blocks[block]}')")
-        block_jumps.append(f"flight_plan.WaitForState('{flight_plan_blocks[block]}')")
-        block_jumps.append(f"flight_plan.WaitForSeconds({int(random.uniform(50, 70))})")
+        block_jumps.append(f"items.JumpToBlock('{flight_plan_blocks[block]}')")
+        block_jumps.append(f"items.WaitForState('{flight_plan_blocks[block]}')")
+        block_jumps.append(f"items.WaitForSeconds({int(random.uniform(50, 70))})")
 
     scenarios.append(f"lambda: [  # {i}\n" +
                      ',\n'.join(indent(block_jumps, n=4)) + ", \n" +
@@ -169,7 +167,7 @@ outfile.write_text(
             '][int(i)]()',
         ], n=2, join=True),
         new_wps='{\n' + indent(
-            [f'    {key}: flight_plan_generator.{value},' for key, value in new_wp_locs.items()] + ['}'],
+            [f'    {key}: {value},' for key, value in new_wp_locs.items()] + ['}'],
             n=2, join=True
         ),
     )

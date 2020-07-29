@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 sys.path.append(str(Path("../pprzlink/lib/v1.0/python").resolve()))
-import flight_plan_generator
+from flight_plan import waypoint
 
 # Set up logging
 logger = logging.getLogger('pprz_tester')
@@ -45,15 +45,15 @@ def add_airframe_arg(parser):
 
 def parse_waypoints(args):
     wp_locs = dict()
-    flight_plan_generator.VALID_RANGE_LON = args.wp_fuzz_bounds_lon
-    flight_plan_generator.VALID_RANGE_LAT = args.wp_fuzz_bounds_lat
-    flight_plan_generator.VALID_RANGE_ALT = args.wp_fuzz_bounds_alt
+    waypoint.VALID_RANGE_LON = args.wp_fuzz_bounds_lon
+    waypoint.VALID_RANGE_LAT = args.wp_fuzz_bounds_lat
+    waypoint.VALID_RANGE_ALT = args.wp_fuzz_bounds_alt
 
     for name in (args.fuzz_wps or []):
         wp_locs[name] = None
 
     for name, *loc in (args.wp_location or []):
-        loc = flight_plan_generator.WaypointLocation(*[float(i) for i in loc])
+        loc = waypoint.WaypointLocation(*[float(i) for i in loc])
         wp_locs[name] = loc
 
     return wp_locs
