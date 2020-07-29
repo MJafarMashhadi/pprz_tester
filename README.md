@@ -1,12 +1,15 @@
 # Paparazzi Tester
-:airplane: Remote controlling paparazzi-powered UAVs to collect flight data
+:airplane: Remote controlling paparazzi-powered UAVs to collect flight data.
+
+This consists of a test generator and a test runner. The test scenarios are stored as 
+python modules in `pprz_tester/generated_plans`.
 
 ## Installation
 ```git clone --recursive https://github.com/MJafarMashhadi/pprz_tester```
 Set `PAPARAZZI_HOME` environment variable to the directory you cloned 
 [Paparazzi](https://github.com/paparazzi/paparazzi/) in.
 
-## Usage
+## Test Runner Usage
 Your gateway to the tester is [`run_test.py`](pprz_tester/run_test.py) file.
 
 It will run the simulator (unless run with `--no-sim`), data link, and server processes then starts communicating with them through ivy link
@@ -88,3 +91,20 @@ a complete circle around the stand-by waypoint. You can also do both, `--prep-mo
 #### Other parameters
  -- To be added --
  
+## Test Generator Usage
+Test generator's entry point is `pprz_tester/gen_test.py`. It expects the aircraft to be built so the required files are
+present in `$PAPARAZZI_HOME/var`. Some parameters such as waypoint fuzzing are shared with test runner. Note that the
+parameters that are fuzzed at test generation level are fixed, they won't change every time you run the test; that's to 
+improve reproducibility in case of encountering any bugs or anomalous behaviour.
+
+Example: 
+
+    python pprz_tester/gen_test.py --exclude 0 1 2 3 4 land final flare --length 2 Microjet pprz_tester/generated_plans/l2.py
+
+States 0-4 and 12-14 are excluded from the test, the test length is 2 and it uses the flight plan stored at 
+`$PAPARAZZI_HOME/var/aircrafts/Microjet/flight_plan.xml`. The generated test will be stored in `l2.py`.
+State names can be used instead of state ids, the state name equivalent of above command is:
+
+    python pprz_tester/gen_test.py -x "Wait GPS" "Geo init" "Holding point" "Takeoff" Standby land final flare -l 2 Microjet pprz_tester/generated_plans/l2.py
+
+
