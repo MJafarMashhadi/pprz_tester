@@ -17,7 +17,7 @@ class RecordFlight(Observer):
 
     def __init__(self, ac, log_dir=Path.cwd()/'logs', log_file_name=None, log_file_format='csv'):
         super(RecordFlight, self).__init__(ac)
-        self.history = {name: list() for name in ['unix_time', 'roll', 'pitch', 'heading', 'agl', 'airspeed',
+        self.history = {name: list() for name in ['flight_time', 'roll', 'pitch', 'heading', 'agl', 'airspeed',
                                                   'throttle', 'aileron', 'elevator', 'rudder', 'flaps']}
         self.ready = False
         self._df = None
@@ -30,7 +30,8 @@ class RecordFlight(Observer):
         if not self.ready and any(required is None for required in [
             self.ac.params.commands__values,
             self.ac.params.engine_status__throttle,
-        ]):
+            self.ac.params.navigation__flight_time,
+        ]) or self.ac.params.navigation__flight_time == 0:
             return
         self.ready = True
         msg_dict = new_value.to_dict()
@@ -50,6 +51,7 @@ class RecordFlight(Observer):
         self.history['elevator'].append(pitch)
         self.history['rudder'].append(yaw)
         self.history['flaps'].append(0)
+        self.history['flight_time'].append(self.ac.params.navigation__flight_time)
 
         # Invalidate DF cache
         self._df = None  # Not thread safe
