@@ -42,10 +42,10 @@ run_conf.add_argument('--prep-mode', nargs='*', choices=['circle', 'climb'],
                     help="The required conditions before starting the flight scenario")
 
 cli_helper.add_airframe_arg(parser)
-parser.add_argument('plan',
-                    help="Plan name to run. Format: <plan_name>[<arg1>=<val1>,<arg2>=<val2>,...]. Arguments are "
-                         "optional. If provided, they will be passed to get_items as keyword arguments. They need "
-                         "to be enclosed in square brackets.")
+parser.add_argument('plan', help="Plan name (as a python module in pprz_tester.generated_plans) to run")
+parser.add_argument('-D', action='append',
+                    help="Optional plan arguments. They will be passed to get_items as keyword arguments. "
+                         "Usage: -D<arg1>=<val1> -D<arg2>=<val2> -D<boolarg>")
 args = parser.parse_args()
 
 
@@ -146,7 +146,8 @@ aircraft_manager = aircraft_manager.AircraftManager(
     waypoints=wp_locs,
     prep_mode=list(set(args.prep_mode or {'climb'})),
     plan=args.plan,
-    log_file_format=args.log_format[0],
+    plan_args=args.D,
+    log_file_format=args.log_format,
     log_dir=Path.cwd() / Path(args.log),
 )
 

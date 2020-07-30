@@ -17,19 +17,27 @@ logger = logging.getLogger('pprz_tester')
 
 class AircraftManager:
     def __init__(self, agent_name="MJafarIvyAgent", start_ivy=False, *,
-                 plan=None, waypoints=dict(), prep_mode=['climb'],
+                 plan=None, plan_args=list(), waypoints=dict(), prep_mode=['climb'],
                  log_dir=None, log_file_format=None):
         from datetime import datetime
 
         self.aircraft_list: Dict[int, aircraft.Aircraft] = dict()
         self.ivy = pl.ivy.IvyMessagesInterface(agent_name=agent_name, start_ivy=False)
         # Had to patch it this way instead of my sweet sweet decorator
-        self.new_aircraft_callback = IvySubscribe(ivy_link=self.ivy, message_types=[("ground", "NEW_AIRCRAFT")])\
+        self.new_aircraft_callback = IvySubscribe(ivy_link=self.ivy, message_types=[("ground", "NEW_AIRCRAFT")]) \
             (self.new_aircraft_callback)
 
         self.waypoints = waypoints
         self.prep_mode = prep_mode
         self.plan = plan
+        self.plan_args = dict()
+        for arg_str in (plan_args or []):
+            if '=' in arg_str:
+                key, value = arg_str.split('=')
+            else:
+                key, value = arg_str, True
+
+            self.plan_args[key] = value
         self.start_time = datetime.now().strftime("%m%d-%H%M%S")
         self.log_dir = log_dir
         self.log_file_format = log_file_format
@@ -52,20 +60,11 @@ class AircraftManager:
             logger.warning('No plan specified')
             return []
 
-        kwargs = dict()
-        if '[' in self.plan:
-            brace_index = self.plan.find('[')
-            module_name = self.plan[:brace_index]
-            args_str = self.plan[brace_index+1:-1].split(',')
-            for arg_str in args_str:
-                key, value = arg_str.split('=')
-                kwargs[key] = value
-        else:
-            module_name = self.plan
+        module_name = self.plan
 
         plan_module = importlib.import_module(f'generated_plans.{module_name}')
         plan_instance = plan_module.Plan(ac=ac)
-        return plan_instance.get_items(**kwargs)
+        return plan_instance.get_items(**self.plan_args)
 
     def _plan_generator(self, new_ac):
         yield from wait_for_mode_2
@@ -89,7 +88,10 @@ class AircraftManager:
         yield from self.load_plan(new_ac)
 
     def _get_log_file_name(self, ac):
-        return f'{ac.name}_{self.start_time}_{self.plan}'
+        arg_str = ('[' +
+                   ",".join(f'{k}={v}' for k, v in self.plan_args.items()) +
+                   ']') if self.plan_args else ''
+        return f'{ac.name}_{self.start_time}_{self.plan}{arg_str}'
 
     def create_aircraft(self, ac_id, kwargs):
         new_ac = aircraft.Aircraft(
