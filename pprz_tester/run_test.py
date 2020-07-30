@@ -15,13 +15,12 @@ logger = logging.getLogger('pprz_tester')
 # Parse arguments
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--agent-name', nargs=1, default="MJafarIvyAgent",
+parser.add_argument('--agent-name', default="MJafarIvyAgent",
                     help="The unique name to use when communicating on Ivy bus")
 
 log_group = parser.add_argument_group('flight logs')
-log_group.add_argument('-l', '--log', nargs=1, default="logs",
-                       help="Log file directory")
-log_group.add_argument('--log-format', nargs=1, default=["csv"],
+log_group.add_argument('-l', '--log', default="logs", help="Log file directory")
+log_group.add_argument('--log-format', default="csv",
                        choices=list(flight_recorder.RecordFlight.LOGGING_FORMATS.keys()),
                        help="The format to store and compress logs in")
 
@@ -35,11 +34,11 @@ run_conf = parser.add_argument_group('run configurations')
 run_conf.add_argument('-b', '--build', action='store_true', default=False,
                       help="Build the aircraft before launching the simulation")
 run_conf.add_argument('--gcs', action='store_true', default=False,
-                    help="Open GCS window")
+                      help="Open GCS window")
 run_conf.add_argument('--no-sim', action='store_true', default=False,
-                    help="Does not launch the simulator")
+                      help="Does not launch the simulator")
 run_conf.add_argument('--prep-mode', nargs='*', choices=['circle', 'climb'],
-                    help="The required conditions before starting the flight scenario")
+                      help="The required conditions before starting the flight scenario")
 
 cli_helper.add_airframe_arg(parser)
 parser.add_argument('plan', help="Plan name (as a python module in pprz_tester.generated_plans) to run")
@@ -47,7 +46,6 @@ parser.add_argument('-D', action='append',
                     help="Optional plan arguments. They will be passed to get_items as keyword arguments. "
                          "Usage: -D<arg1>=<val1> -D<arg2>=<val2> -D<boolarg>")
 args = parser.parse_args()
-
 
 ## Start
 wp_locs = cli_helper.parse_waypoints(args)

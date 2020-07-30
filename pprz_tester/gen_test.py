@@ -31,8 +31,7 @@ fp_group.add_argument('-l', '--length', default='*',
                            " lengths from 1 to the number of available blocks.")
 
 cli_helper.add_airframe_arg(parser)
-parser.add_argument('output',
-                    help="Directory to output the test plans")
+parser.add_argument('output', help="Output file name or the directory to output the generated plans")
 
 args = parser.parse_args()
 
