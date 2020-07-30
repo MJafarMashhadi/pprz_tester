@@ -1,4 +1,5 @@
 import argparse
+import itertools
 import logging
 import random
 from pathlib import Path
@@ -51,13 +52,6 @@ for idx, wp in enumerate(fp_tree.xpath("//waypoint"), start=1):
     flight_plan_waypoints[wp.attrib['name']] = idx
 
 new_wp_locs = prepare_new_waypoint_locations(flight_plan_waypoints, cli_helper.parse_waypoints(args))
-
-# Test lengths
-test_length = args.length
-if test_length == '*':
-    raise NotImplementedError("Generating all different lengths is not supported yet.")
-else:
-    test_length = int(test_length)
 
 
 def _map_name_to_index(name_or_index):
@@ -134,16 +128,27 @@ def indent(lines, n=1, indentation=' ' * 4, join=False) -> Union[str, Iterable[s
 
 
 scenarios = []
-for i, blocks in enumerate(gen_blocks(flight_plan_blocks, test_length, args.include, args.exclude)):
+test_length = args.length
+if args.length == '*':
+    blocks_gen = itertools.chain(
+        *(gen_blocks(flight_plan_blocks, test_length, args.include, args.exclude)
+          for test_length in range(1, len(flight_plan_blocks) + 1))
+    )
+else:
+    test_length = int(args.length)
+    blocks_gen = gen_blocks(flight_plan_blocks, test_length, args.include, args.exclude)
+
+for i, blocks in enumerate(blocks_gen):
     block_jumps = []
     for block in blocks:
         block_jumps.append(f"items.JumpToBlock('{flight_plan_blocks[block]}')")
         block_jumps.append(f"items.WaitForState('{flight_plan_blocks[block]}')")
         block_jumps.append(f"items.WaitForSeconds({int(random.uniform(50, 70))})")
 
-    scenarios.append(f"lambda: [  # {i}\n" +
-                     ',\n'.join(indent(block_jumps, n=4)) + ", \n" +
-                     (" " * 4 * 3) + "]")
+    if block_jumps:
+        scenarios.append(f"lambda: [  # {i}\n" +
+                         ',\n'.join(indent(block_jumps, n=4)) + ", \n" +
+                         (" " * 4 * 3) + "]")
 
 outfile: Path = Path(args.output)
 if outfile.exists() and outfile.is_dir():
