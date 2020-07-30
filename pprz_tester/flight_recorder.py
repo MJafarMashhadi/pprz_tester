@@ -17,8 +17,9 @@ class RecordFlight(Observer):
 
     def __init__(self, ac, log_dir=Path.cwd()/'logs', log_file_name=None, log_file_format='csv'):
         super(RecordFlight, self).__init__(ac)
-        self.history = {name: list() for name in ['flight_time', 'roll', 'pitch', 'heading', 'agl', 'airspeed',
-                                                  'throttle', 'aileron', 'elevator', 'rudder', 'flaps']}
+        columns = ('flight_time',) + ('airspeed', 'pitch', 'roll', 'heading', 'agl') + \
+                  ('elevator', 'aileron', 'rudder', 'throttle', 'flaps')
+        self.history = {name: list() for name in columns}
         self.ready = False
         self._df = None
         self.log_dir = log_dir
@@ -55,7 +56,7 @@ class RecordFlight(Observer):
 
         # Invalidate DF cache
         self._df = None  # Not thread safe
-        if len(self.history['unix_time']) % 10 == 0:
+        if len(self.history['flight_time']) % 10 == 0:
             # Periodic save
             self.save_history()
 
@@ -85,9 +86,16 @@ class RecordFlight(Observer):
     @property
     def history_df(self):  # Not thread safe
         if self._df is None:
-            df = pd.DataFrame(self.history)
-            df['unix_time'] = pd.to_datetime(df['unix_time'], unit='s')
-            df.set_index('unix_time', inplace=True)
+            rename = dict(zip(
+                ('airspeed', 'pitch', 'roll', 'heading', 'agl') +
+                ('elevator', 'aileron', 'rudder', 'throttle', 'flaps'),
+                ('SpeedFts', 'Pitch', 'Roll', 'Yaw', 'current_altitude',) +
+                ('elev', 'ai', 'rdr', 'throttle', 'Flaps')
+            ))
+
+            df = (pd.DataFrame(self.history)
+                  .rename(columns=rename)
+                  .set_index('flight_time', drop=True))
             self._df = df
         return self._df
 
