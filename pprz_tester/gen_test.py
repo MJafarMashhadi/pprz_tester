@@ -100,7 +100,6 @@ class {ClassName}(PlanBase):
         if new_wp_locs:
             plan += generation_helper.move_waypoints(new_wp_locs)
 {get_items}
-        plan.append(items.StopTest())
         return plan
 
 
