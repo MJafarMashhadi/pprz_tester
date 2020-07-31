@@ -87,6 +87,19 @@ class AircraftManager:
 
         yield from self.load_plan(new_ac)
 
+        yield items.JumpToBlock('Land Right AF-TD')
+        yield items.WaitForState('land')
+        yield items.WaitForSeconds(length=5)
+        yield items.WaitClimb(tolerance=2)
+        yield items.JumpToBlock('final')
+        yield items.WaitForState('flare')
+        yield items.WaitAny(
+            items.WaitClimb(tolerance=1),
+            items.WaitForSpeed(target_speed=0),
+            items.WaitForSeconds(length=60),
+        )
+        yield items.StopTest()
+
     def _get_log_file_name(self, ac):
         arg_str = ('[' +
                    ",".join(f'{k}={v}' for k, v in self.plan_args.items()) +

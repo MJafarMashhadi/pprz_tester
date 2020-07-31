@@ -102,6 +102,16 @@ class WaitForState(PlanItem):
         return f'<Flight plan item: wait for state {self.state_name_or_id}>'
 
 
+class WaitForSpeed(PlanItem):
+    def __init__(self, target_speed, tolerance=0.5, *args, **kwargs):
+        super(WaitForSpeed, self).__init__(*args, **kwargs)
+        self.target_speed = target_speed
+        self.tolerance = tolerance
+
+    def match(self, ac, property_name, old_value, new_value):
+        return math.fabs(ac.params.flight_param__airspeed - self.target_speed) <= self.tolerance
+
+
 class JumpToBlock(PlanItem):
     def __init__(self, state_id_or_name, *args, **kwargs):
         super(JumpToBlock, self).__init__(*args, **kwargs)
@@ -164,7 +174,7 @@ class WaitClimb(PlanItem):
     def match(self, ac, property_name, old_value, new_value):
         if property_name == 'flight_param':
             old_value = self.last_value
-            new_alt = new_value['alt']
+            new_alt = new_value['agl']
             self.last_value = new_alt
         else:
             return False
