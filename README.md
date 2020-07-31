@@ -83,7 +83,28 @@ a complete circle around the stand-by waypoint. You can also do both, `--prep-mo
 
 ### Fixing and Fuzzing parameters
 #### Waypoints
- -- To be added --
+Waypoint locations can be fuzzed during the test generation or the running. Fuzzing in runtime overrides any 
+fuzzing/fixing that happened during test generation. In both cases fixing takes priority over fuzzing. So to summarize, 
+a waypoint will be located at the place:
+1. Fixed in runtime (`run_test.py -w <name or id> <lat> <long> <altitude>`) 
+2. Fuzzed in runtime (`run_test.py --fuzz-wps <name or id>`)
+3. Fixed in generation (`gen_test.py -w <name or id> <lat> <long> <altitude>`) 
+4. Fuzzed in generation (`gen_test.py --fuzz-wps <name or id>`)
+5. Specified in flight plan
+
+Note that the commandline options for fuzzing and fixing waypoint locations are the same in both running and generating
+modes. `--wp-location` can replace `-w` as its long form as well.
+
+To specify the boundaries in which waypoint locations are randomized in, use `--wp-fuzz-bounds-lat`, 
+`--wp-fuzz-bounds-lon`, and `--wp-fuzz-bounds-alt` options to provide min and max ranges (a cube). 
+
+Example:
+
+    python pprz_tester/gen_test.py -w S1 43.4659053 1.27 300 --fuzz-wps S2 --wp-fuzz-bounds-alt 200 220 -l 2 Microjet pprz_tester/generated_plans/l2.py
+
+It fixes waypoint S1, randomizes S2's location and altitude while providing bounds for S2's altitude (200-220 meters)
+and using the default east-west and north-south boundaries for its location.
+
 
 #### In flight actions 
  -- To be added --
