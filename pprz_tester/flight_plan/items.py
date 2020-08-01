@@ -38,7 +38,7 @@ class WaitAny(PlanItem):
         return False
 
     def act(self, *args, **kwargs):
-        if not self.matching_item:
+        if self.matching_item is None:
             return False
 
         return self.items[self.matching_item].act(*args, **kwargs)

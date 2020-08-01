@@ -97,5 +97,5 @@ class FlightPlanPerformingObserver(Observer):
                     plan_item = next_item
                     logger.info(f'Performed {plan_item}')
                 else:
-                    logger.error(f'Failed to perform a flight plan item, keeping the item on the queue.')
+                    logger.error(f'Failed to perform {next_item}, keeping the item on the queue.')
                     break
