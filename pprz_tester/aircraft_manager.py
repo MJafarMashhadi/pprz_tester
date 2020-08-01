@@ -60,9 +60,9 @@ class AircraftManager:
             logger.warning('No plan specified')
             return []
 
-        module_name = self.plan
+        module_name = f'generated_plans.{self.plan}'
 
-        plan_module = importlib.import_module(f'generated_plans.{module_name}')
+        plan_module = importlib.import_module(module_name)
         plan_instance = plan_module.Plan(ac=ac)
         return plan_instance.get_items(**self.plan_args)
 

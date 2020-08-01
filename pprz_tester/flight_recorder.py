@@ -89,6 +89,7 @@ class RecordFlight(Observer):
             rename = dict(zip(
                 ('airspeed', 'pitch', 'roll', 'heading', 'agl') +
                 ('elevator', 'aileron', 'rudder', 'throttle', 'flaps'),
+
                 ('SpeedFts', 'Pitch', 'Roll', 'Yaw', 'current_altitude',) +
                 ('elev', 'ai', 'rdr', 'throttle', 'Flaps')
             ))
@@ -96,6 +97,15 @@ class RecordFlight(Observer):
             df = (pd.DataFrame(self.history)
                   .rename(columns=rename)
                   .set_index('flight_time', drop=True))
+            df['SpeedFts'] *= 3.28084  # m -> ft
+            df['Pitch'] *= 100 / 35  # -100 - 100, 30 degrees
+            df['Roll'] *= 100 / 35  # -100 - 100, 30 degrees
+            df['Yaw'] = df['Yaw'] * (60. / 360) - 30.
+            df['elev'] *= 1. / 500  #
+            df['ai'] *= 5. / 9600  #
+            df['rdr'] *= 1. / 500  #
+            df['throttle'] /= 100.  # %
             self._df = df
+
         return self._df
 
