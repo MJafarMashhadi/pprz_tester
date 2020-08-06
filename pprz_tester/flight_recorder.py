@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from pathlib import Path
 
 import pandas as pd
@@ -17,8 +18,10 @@ class RecordFlight(Observer):
 
     def __init__(self, ac, log_dir=Path.cwd()/'logs', log_file_name=None, log_file_format='csv'):
         super(RecordFlight, self).__init__(ac)
-        columns = ('flight_time',) + ('airspeed', 'pitch', 'roll', 'heading', 'agl') + \
-                  ('elevator', 'aileron', 'rudder', 'throttle', 'flaps')
+        columns = (('flight_time',) + ('airspeed', 'pitch', 'roll', 'heading', 'agl') +
+                   ('elevator', 'aileron', 'rudder', 'throttle', 'flaps') +
+                   ('ap_gaz', 'ap_lateral', 'ap_horizontal', 'v_ctl_auto_throttle_submode', 'v_ctl_climb_mode',
+                    'h_ctl_pitch_mode', 'nav_mode', '_state_',))
         self.history = {name: list() for name in columns}
         self.ready = False
         self._df = None
@@ -26,6 +29,7 @@ class RecordFlight(Observer):
         self.log_file_name = log_file_name
         self.log_file_format = log_file_format
         self._log_file_addr = None
+        self._state = defaultdict(lambda: len(self._state))
 
     def notify(self, property_name, old_value, new_value: pl.message.PprzMessage):
         if not self.ready and any(required is None for required in [
@@ -53,6 +57,15 @@ class RecordFlight(Observer):
         self.history['rudder'].append(yaw)
         self.history['flaps'].append(0)
         self.history['flight_time'].append(self.ac.params.navigation__flight_time)
+
+        state_vars_concat = []
+        for k in ('ap_gaz', 'ap_lateral', 'ap_horizontal', 'v_ctl_auto_throttle_submode', 'v_ctl_climb_mode',
+                  'h_ctl_pitch_mode', 'nav_mode',):
+            val = getattr(self.ac.params, f'pprz_mode__{k}')
+            self.history[k].append(val)
+            state_vars_concat.append(val)
+        state_vars_concat = tuple(state_vars_concat)
+        self.history['_state_'].append(self._state[state_vars_concat])
 
         # Invalidate DF cache
         self._df = None  # Not thread safe
