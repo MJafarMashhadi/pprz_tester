@@ -141,7 +141,7 @@ for i, blocks in enumerate(blocks_gen):
     for block in blocks:
         block_jumps.append(f"items.JumpToBlock('{flight_plan_blocks[block]}')")
         block_jumps.append(f"items.WaitForState('{flight_plan_blocks[block]}')")
-        block_jumps.append(f"items.WaitForSeconds({int(random.uniform(50, 70))})")
+        block_jumps.append(f"items.WaitForSeconds({int(random.uniform(60, 90))})")
 
     if block_jumps:
         scenarios.append(f"lambda: [  # {i}\n" +

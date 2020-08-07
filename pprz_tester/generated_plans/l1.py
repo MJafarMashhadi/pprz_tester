@@ -19,32 +19,32 @@ class GeneratedCombinationsPlan(PlanBase):
             lambda: [  # 0
                 items.JumpToBlock('Figure 8 around wp 1'),
                 items.WaitForState('Figure 8 around wp 1'),
-                items.WaitForSeconds(69),
+                items.WaitForSeconds(73),
             ],
             lambda: [  # 1
                 items.JumpToBlock('Oval 1-2'),
                 items.WaitForState('Oval 1-2'),
-                items.WaitForSeconds(68),
+                items.WaitForSeconds(70),
             ],
             lambda: [  # 2
                 items.JumpToBlock('MOB'),
                 items.WaitForState('MOB'),
-                items.WaitForSeconds(57),
+                items.WaitForSeconds(85),
             ],
             lambda: [  # 3
                 items.JumpToBlock('Survey S1-S2'),
                 items.WaitForState('Survey S1-S2'),
-                items.WaitForSeconds(64),
+                items.WaitForSeconds(89),
             ],
             lambda: [  # 4
                 items.JumpToBlock('Path 1,2,S1,S2,STDBY'),
                 items.WaitForState('Path 1,2,S1,S2,STDBY'),
-                items.WaitForSeconds(50),
+                items.WaitForSeconds(69),
             ],
             lambda: [  # 5
                 items.JumpToBlock('HOME'),
                 items.WaitForState('HOME'),
-                items.WaitForSeconds(62),
+                items.WaitForSeconds(73),
             ],
         ][int(i)]()
         return plan
