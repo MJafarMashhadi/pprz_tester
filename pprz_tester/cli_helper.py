@@ -3,7 +3,7 @@ import os
 import sys
 from pathlib import Path
 
-sys.path.append(str(Path("../pprzlink/lib/v1.0/python").resolve()))
+sys.path.append(str(Path(__file__).parent.parent / Path("pprzlink/lib/v1.0/python").resolve()))
 from flight_plan import waypoint
 
 # Set up logging
