@@ -1,14 +1,16 @@
-
 from flight_plan import items
 from flight_plan import generation_helper
 from flight_plan.waypoint import WaypointLocation
 from . import PlanBase
+
+import itertools
 
 
 class GeneratedCombinationsPlan(PlanBase):
     def get_items(self, **kwargs):
         plan = list()
         i = kwargs.pop('i')
+        permutation = kwargs.pop('permutation', 0)
         new_wp_locs = {
             3: WaypointLocation(lat=43.4659053, long=1.27, alt=300.0),
             4: WaypointLocation(lat=43.465417, long=1.2799074, alt=300.0),
@@ -719,6 +721,25 @@ class GeneratedCombinationsPlan(PlanBase):
                 items.WaitForSeconds(69),
             ],
         ][int(i)]()
+
+        permutation = int(permutation)
+        block_size = 3
+        max_permutations = 1
+        for n in range(len(plan) // block_size, 0, -1):
+            max_permutations *= n
+        if permutation >= max_permutations:
+            raise ValueError(f'Max number of permutations for this scenario is {{max_permutations}}')
+        if permutation > 0:
+            blocks = []
+            for i in range(0, len(plan), block_size):
+                blocks.append(plan[i:i + block_size])
+            for i, perm in enumerate(itertools.permutations(blocks)):
+                if i == permutation:
+                    plan = list(itertools.chain(*perm))
+                    break
+            else:
+                raise ValueError('Invalid permutation')
+
         return plan
 
 

@@ -91,6 +91,8 @@ from flight_plan import generation_helper
 from flight_plan.waypoint import WaypointLocation
 from . import PlanBase
 
+import itertools
+
 
 class {ClassName}(PlanBase):
     def get_items(self, **kwargs):
@@ -100,6 +102,25 @@ class {ClassName}(PlanBase):
         if new_wp_locs:
             plan += generation_helper.move_waypoints(new_wp_locs)
 {get_items}
+
+        permutation = int(permutation)
+        block_size = 3
+        max_permutations = 1
+        for n in range(len(plan)//block_size, 0, -1):
+            max_permutations *= n
+        if permutation >= max_permutations:
+            raise ValueError(f'Max number of permutations for this scenario is {{max_permutations}}')
+        if permutation > 0:
+            blocks = []
+            for i in range(0, len(plan), block_size):
+                blocks.append(plan[i:i+block_size])
+            for i, perm in enumerate(itertools.permutations(blocks)):
+                if i == permutation:
+                    plan = list(itertools.chain(*perm))
+                    break
+            else:
+                raise ValueError('Invalid permutation')
+
         return plan
 
 
@@ -154,16 +175,24 @@ if outfile.exists() and outfile.is_dir():
 
 
 def make_params(*parameter_names):
-    return [
-        f"{parameter_name} = kwargs.pop('{parameter_name}')"
-        for parameter_name in parameter_names
-    ]
+    parameters = []
+    for p in parameter_names:
+        if isinstance(p, str):
+            parameter_name = p
+            parameters.append(f"{parameter_name} = kwargs.pop('{parameter_name}')")
+        elif isinstance(p, tuple):
+            parameter_name, default_value = p
+            parameters.append(f"{parameter_name} = kwargs.pop('{parameter_name}', {default_value})")
+        else:
+            raise ValueError("Invalid parameter format")
+
+    return parameters
 
 
 outfile.write_text(
     plan_template.format(
         ClassName='GeneratedCombinationsPlan',
-        params=indent(make_params('i'), n=2, join=True),
+        params=indent(make_params('i', ('permutation', 0)), n=2, join=True),
         get_items=indent([
             'plan += [',
             map(lambda line: line + ',', indent(scenarios)),
