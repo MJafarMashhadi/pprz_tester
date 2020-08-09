@@ -1,4 +1,5 @@
-import logging
+import logging  # noqa
+import logging.config
 import os
 import sys
 from pathlib import Path
@@ -7,10 +8,33 @@ sys.path.append(str(Path(__file__).parent.parent / Path("pprzlink/lib/v1.0/pytho
 from flight_plan import waypoint
 
 # Set up logging
+logging.config.dictConfig({
+    'version': 1,
+    'disable_existing_loggers': True,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'detailed',
+        }
+    },
+    'formatters': {
+        'detailed': {
+            'class': 'logging.Formatter',
+            'format': '%(asctime)s %(name)-15s %(levelname)-8s %(processName)-10s %(message)s'
+        },
+        'simple': {
+            'class': 'logging.Formatter',
+            'format': '%(name)-15s %(levelname)-8s %(processName)-10s %(message)s'
+        }
+    },
+    'loggers': {
+        'pprz_tester': {
+            'handlers': ['console'],
+            'level': 'INFO'
+        },
+    },
+})
 logger = logging.getLogger('pprz_tester')
-logger.setLevel(logging.INFO)
-logger.handlers.clear()
-logger.addHandler(logging.StreamHandler())
 
 
 def add_waypoint_fuzzing_args(parser):
