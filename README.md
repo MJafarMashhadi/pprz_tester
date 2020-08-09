@@ -120,12 +120,12 @@ improve reproducibility in case of encountering any bugs or anomalous behaviour.
 
 Example: 
 
-    python pprz_tester/gen_test.py --exclude 0 1 2 3 4 10 11 land final flare --length 2 Microjet pprz_tester/generated_plans/l2.py
+    python pprz_tester/gen_test.py --exclude 0 1 2 3 4 10 11 HOME land final flare --length 2 Microjet pprz_tester/generated_plans/l2.py
 
 States 0-4 and 10-14 are excluded from the test, the test length is 2 and it uses the flight plan stored at 
 `$PAPARAZZI_HOME/var/aircrafts/Microjet/flight_plan.xml`. The generated test will be stored in `l2.py`.
 State names can be used instead of state ids, the state name equivalent of above command is:
 
-    python pprz_tester/gen_test.py -x "Wait GPS" "Geo init" "Holding point" Takeoff Standby "Land Right AF-TD" "Land Left AF-TD" land final flare -l 2 Microjet pprz_tester/generated_plans/l2.py
+    python pprz_tester/gen_test.py -x "Wait GPS" "Geo init" "Holding point" Takeoff Standby "Land Right AF-TD" "Land Left AF-TD" HOME land final flare -l 2 Microjet pprz_tester/generated_plans/l2.py
 
 
