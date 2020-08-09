@@ -77,6 +77,7 @@ class FlightPlanPerformingObserver(Observer):
             if not self._next_item:
                 try:
                     self._next_item = next(self._plan)  # Pop next item
+                    logger.debug(f'Next plan item: {self._next_item}')
                 except StopIteration:
                     self._next_item = None
                     break
