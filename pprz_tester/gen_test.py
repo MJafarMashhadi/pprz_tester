@@ -102,25 +102,26 @@ class {ClassName}(PlanBase):
         if new_wp_locs:
             plan += generation_helper.move_waypoints(new_wp_locs)
 {get_items}
-
         permutation = int(permutation)
         block_size = 3
         max_permutations = 1
-        for n in range(len(plan)//block_size, 0, -1):
+        for n in range(len(plan_blocks) // block_size, 0, -1):
             max_permutations *= n
         if permutation >= max_permutations:
-            raise ValueError(f'Max number of permutations for this scenario is {{max_permutations}}')
+            # ValueError(f'Max number of permutations for this scenario is {max_permutations}')
+            print(f'Max number of permutations for this scenario is {max_permutations}')
+            return [items.StopTest()]
         if permutation > 0:
             blocks = []
-            for i in range(0, len(plan), block_size):
-                blocks.append(plan[i:i+block_size])
+            for i in range(0, len(plan_blocks), block_size):
+                blocks.append(plan_blocks[i:i + block_size])
             for i, perm in enumerate(itertools.permutations(blocks)):
                 if i == permutation:
-                    plan = list(itertools.chain(*perm))
+                    plan_blocks = list(itertools.chain(*perm))
                     break
             else:
                 raise ValueError('Invalid permutation')
-
+        plan += plan_blocks
         return plan
 
 
@@ -194,7 +195,7 @@ outfile.write_text(
         ClassName='GeneratedCombinationsPlan',
         params=indent(make_params('i', ('permutation', 0)), n=2, join=True),
         get_items=indent([
-            'plan += [',
+            'plan_blocks = [',
             map(lambda line: line + ',', indent(scenarios)),
             '][int(i)]()',
         ], n=2, join=True),
