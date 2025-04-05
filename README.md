@@ -105,27 +105,114 @@ Example:
 It fixes waypoint S1, randomizes S2's location and altitude while providing bounds for S2's altitude (200-220 meters)
 and using the default east-west and north-south boundaries for its location.
 
-
 #### In flight actions 
- -- To be added --
+During flight, you can perform various actions to control and monitor the aircraft:
+
+1. **Change Target Altitude**
+   ```python
+   ac.commands.change_target_altitude(new_altitude)
+   ```
+   This command allows you to change the target altitude of the aircraft during flight.
+
+2. **Jump to Block**
+   ```python
+   ac.commands.jump_to_block(block_name_or_id)
+   ```
+   You can jump to any block in the flight plan either by name or ID. This is useful for testing specific flight segments.
+   Common block names include:
+   - `'Figure 8 around wp 1'`: Performs a figure-8 pattern around waypoint 1
+   - `'Oval 1-2'`: Flies an oval pattern between waypoints 1 and 2
+   - `'MOB'`: Man Over Board pattern
+   - `'Survey S1-S2'`: Survey pattern between survey points S1 and S2
+   - `'Path 1,2,S1,S2,STDBY'`: Follows a specific path through multiple waypoints
+
+3. **Flight Recording**
+   The system automatically records flight data including:
+   - Flight parameters (airspeed, pitch, roll, heading, altitude)
+   - Control surfaces (elevator, aileron, rudder, throttle, flaps)
+   - Autopilot states (gaz, lateral, horizontal control modes)
+   - Navigation data
+
+   The data is saved in either CSV or HDF5 format (specified by `--log-format`).
+
+4. **Flight Plan Items**
+   You can create custom flight plan items by subclassing `PlanItem` or using existing ones:
+   - `WaitForState`: Waits for a specific flight state
+   - `WaitForSpeed`: Waits for a specific airspeed (with tolerance)
+   - `WaitForCircles`: Waits for a number of circles to be completed
+   - `WaitClimb`: Waits for altitude to stabilize
+   - `WaitForSeconds`: Waits for a specified duration
+   - `WaitAny`: Waits for any of the specified conditions
+   - `WaitAll`: Waits for all specified conditions
+
+   Example of creating a custom flight plan:
+   ```python
+   plan = [
+       items.JumpToBlock('Survey S1-S2'),
+       items.WaitForState('Survey S1-S2'),
+       items.WaitForSeconds(60),
+       items.JumpToBlock('Path 1,2,S1,S2,STDBY'),
+       items.WaitForState('Path 1,2,S1,S2,STDBY'),
+       items.WaitForSeconds(30)
+   ]
+   ```
 
 #### Other parameters
- -- To be added --
- 
+1. **Aircraft Selection**
+   The system supports two aircraft types:
+   - `Bixler`: A trainer aircraft
+   - `Microjet`: A jet-powered aircraft
+
+   Select the aircraft using the `airframe` argument:
+   ```bash
+   python pprz_tester/run_test.py Bixler ...
+   ```
+
+2. **Logging Configuration**
+   - `--log`: Directory to store log files (default: "logs")
+   - `--log-format`: Format to store logs in (choices: "csv", "hd5")
+   - Log files are automatically named using the pattern: `{aircraft_name}_{timestamp}_{plan_name}[args]`
+   - Log files contain detailed flight data including:
+     - Speed (converted to feet/second)
+     - Pitch and roll (scaled to ±35 degrees)
+     - Yaw (scaled to ±30 degrees)
+     - Control surface positions
+     - Throttle percentage
+     - Autopilot states
+
+3. **Run Configuration**
+   - `--build`: Build the aircraft before launching simulation
+   - `--gcs`: Open GCS (Ground Control Station) window
+   - `--no-sim`: Skip launching the simulator
+   - `--prep-mode`: Specify required conditions before starting flight scenario
+     - `circle`: Wait for a complete circle around standby waypoint
+     - `climb`: Wait for climb to finish
+     - Can use both: `--prep-mode circle climb`
+   - `--agent-name`: Unique name for Ivy bus communication (default: "MJafarIvyAgent")
+
+4. **Flight Plan Generation**
+   - Plans can be generated with different lengths (1-5)
+   - Each plan can have multiple permutations
+   - Plans can include waypoint modifications
+   - Plans can be customized for specific aircraft types
+   - Example plan structure:
+     ```python
+     class CustomPlan(PlanBase):
+         def get_items(self, **kwargs):
+             return [
+                 items.JumpToBlock('Figure 8 around wp 1'),
+                 items.WaitForState('Figure 8 around wp 1'),
+                 items.WaitForSeconds(60),
+                 items.StopTest()
+             ]
+     ```
+
+5. **Ivy Communication**
+   - The system uses Ivy protocol for communication between components
+   - Messages are automatically decoded and stored in aircraft parameters
+   - Supports real-time monitoring of aircraft state
+   - Enables remote control and command execution
+   - Handles automatic reconnection and error recovery
+
 ## Test Generator Usage
-Test generator's entry point is `pprz_tester/gen_test.py`. It expects the aircraft to be built so the required files are
-present in `$PAPARAZZI_HOME/var`. Some parameters such as waypoint fuzzing are shared with test runner. Note that the
-parameters that are fuzzed at test generation level are fixed, they won't change every time you run the test; that's to 
-improve reproducibility in case of encountering any bugs or anomalous behaviour.
-
-Example: 
-
-    python pprz_tester/gen_test.py --exclude 0 1 2 3 4 10 11 HOME land final flare --length 2 Microjet pprz_tester/generated_plans/l2.py
-
-States 0-4 and 10-14 are excluded from the test, the test length is 2 and it uses the flight plan stored at 
-`$PAPARAZZI_HOME/var/aircrafts/Microjet/flight_plan.xml`. The generated test will be stored in `l2.py`.
-State names can be used instead of state ids, the state name equivalent of above command is:
-
-    python pprz_tester/gen_test.py -x "Wait GPS" "Geo init" "Holding point" Takeoff Standby "Land Right AF-TD" "Land Left AF-TD" HOME land final flare -l 2 Microjet pprz_tester/generated_plans/l2.py
-
-
+Test generator's entry point is `
